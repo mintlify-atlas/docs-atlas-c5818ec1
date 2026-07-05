@@ -1,0 +1,274 @@
+---
+title: "Certifications Component: Timeline and Cards View"
+sidebarTitle: "Certifications"
+description: "The Certifications component displays professional certifications in a switchable MUI Timeline or card grid layout, with a modal to view diploma images."
+---
+
+The `Certifications` component (source name: `Certificados`) presents Iwinser Sanchez's professional certifications in two switchable layouts — a Material UI alternating timeline and a responsive card grid. A toggle button switches between the two views at runtime. Clicking the "Ver Certificado" button on any entry invokes a utility function that opens the corresponding diploma image in a full-screen modal overlay.
+
+## Source File
+
+**`src/components/Certifications.jsx`**
+
+## View Modes
+
+The component maintains a `viewMode` state string that controls which layout is rendered:
+
+```jsx
+const [viewMode, setViewMode] = useState("timeline"); // "timeline" | "cards"
+
+const toggleView = () => {
+  setViewMode(viewMode === "timeline" ? "cards" : "timeline");
+};
+```
+
+| `viewMode` value | Layout | Default |
+|---|---|---|
+| `"timeline"` | MUI alternating `<Timeline>` | ✅ Yes |
+| `"cards"` | CSS grid of `<div className="card">` elements | No |
+
+The toggle button displays a grid icon (`fa-table-cells-large`) when in timeline mode (to suggest switching to cards) and a timeline icon (`fa-timeline`) when in cards mode:
+
+```jsx
+<button
+  className="view-toggle-btn"
+  onClick={toggleView}
+  aria-label={`Cambiar a vista de ${viewMode === "timeline" ? "tarjetas" : "línea de tiempo"}`}
+>
+  <i className={viewMode === "timeline" ? "fa-solid fa-table-cells-large" : "fa-solid fa-timeline"} />
+  <span>{viewMode === "timeline" ? "Tarjetas" : "Línea de tiempo"}</span>
+</button>
+```
+
+## MUI Components
+
+The timeline view uses the following components imported from `@mui/lab`:
+
+```jsx
+import Timeline          from "@mui/lab/Timeline";
+import TimelineItem      from "@mui/lab/TimelineItem";
+import TimelineSeparator from "@mui/lab/TimelineSeparator";
+import TimelineConnector from "@mui/lab/TimelineConnector";
+import TimelineContent   from "@mui/lab/TimelineContent";
+import TimelineDot       from "@mui/lab/TimelineDot";
+```
+
+<CardGroup cols={2}>
+  <Card title="Timeline" icon="timeline">
+    Root container. Rendered with `position="alternate"` so items alternate left and right.
+  </Card>
+  <Card title="TimelineItem" icon="circle-dot">
+    Wraps each certification entry. Keyed by `cert.id`.
+  </Card>
+  <Card title="TimelineSeparator" icon="grip-lines">
+    Holds the `TimelineDot` and (when not the last item) a `TimelineConnector` vertical line.
+  </Card>
+  <Card title="TimelineDot" icon="circle">
+    The coloured dot on the axis. Rendered with `color="primary"`.
+  </Card>
+  <Card title="TimelineConnector" icon="arrows-up-down">
+    Vertical line between dots. Omitted for the last item: `{cert.id < certificados.length - 1 && <TimelineConnector />}`
+  </Card>
+  <Card title="TimelineContent" icon="align-left">
+    The text block (title, institution, button) beside each dot.
+  </Card>
+</CardGroup>
+
+## Certification Data
+
+The `certificados` array is defined directly inside the component. Each object has four fields: `id`, `title`, `institucion`, and `fecha`.
+
+```jsx
+const certificados = [
+  {
+    id: 0,
+    title: "Diplomado en Desarrollo de Software",
+    institucion: "MisionTic2022",
+    fecha: "2022-01",
+  },
+  {
+    id: 1,
+    title: "Diplomado en Desarrollo de Aplicaciones Web",
+    institucion: "MisionTic2022",
+    fecha: "2022-03",
+  },
+  {
+    id: 2,
+    title: "Diplomado en Programación Básica Lenguaje Java",
+    institucion: "MisionTic2022",
+    fecha: "2022-05",
+  },
+  {
+    id: 3,
+    title: "Diplomado Fundamentos de Programación en Python",
+    institucion: "MisionTic2022",
+    fecha: "2022-07",
+  },
+  {
+    id: 4,
+    title: "Full Stack Developer con JavaScript",
+    institucion: "Platzi",
+    fecha: "2022-09",
+  },
+  {
+    id: 5,
+    title: "FrontEnd Developer con React",
+    institucion: "Platzi",
+    fecha: "2022-11",
+  },
+  {
+    id: 6,
+    title: "Curso práctico de React.js",
+    institucion: "Platzi",
+    fecha: "2023-01",
+  },
+];
+```
+
+The full list rendered in the UI:
+
+| id | Title | Institution | Date |
+|---|---|---|---|
+| 0 | Diplomado en Desarrollo de Software | MisionTic2022 | 2022-01 |
+| 1 | Diplomado en Desarrollo de Aplicaciones Web | MisionTic2022 | 2022-03 |
+| 2 | Diplomado en Programación Básica Lenguaje Java | MisionTic2022 | 2022-05 |
+| 3 | Diplomado Fundamentos de Programación en Python | MisionTic2022 | 2022-07 |
+| 4 | Full Stack Developer con JavaScript | Platzi | 2022-09 |
+| 5 | FrontEnd Developer con React | Platzi | 2022-11 |
+| 6 | Curso práctico de React.js | Platzi | 2023-01 |
+
+<Note>
+  The `fecha` field is rendered in the cards view but is commented out in the timeline view (`{/* <p className="fecha">{cert.fecha}</p> */}`). To re-enable it in the timeline, remove the comment delimiters around that line in `Certifications.jsx`.
+</Note>
+
+## Timeline View — Full JSX
+
+```jsx
+<Timeline position="alternate">
+  {certificados.map((cert) => (
+    <TimelineItem key={cert.id}>
+      <TimelineSeparator>
+        <TimelineDot color="primary" />
+        {cert.id < certificados.length - 1 && <TimelineConnector />}
+      </TimelineSeparator>
+      <TimelineContent>
+        <div className="timeline-content">
+          <p className="title">{cert.title}</p>
+          <p className="institucion">
+            <i className="fa-solid fa-trophy"></i> {cert.institucion}
+          </p>
+          <button
+            className="view-link"
+            onClick={() => mostrarDiploma(cert.id)}
+            aria-label={`Ver certificado de ${cert.title}`}
+          >
+            <i className="fa-solid fa-magnifying-glass"></i> Ver Certificado
+          </button>
+        </div>
+      </TimelineContent>
+    </TimelineItem>
+  ))}
+</Timeline>
+```
+
+## Cards View — Full JSX
+
+```jsx
+<div className="cards-container">
+  {certificados.map((cert) => (
+    <div className="card" key={cert.id}>
+      <div className="card-content">
+        <p className="title">{cert.title}</p>
+        <p className="institucion">
+          <i className="fa-solid fa-trophy"></i> {cert.institucion}
+        </p>
+        <p className="fecha">{cert.fecha}</p>
+        <button
+          className="view-link"
+          onClick={() => mostrarDiploma(cert.id)}
+          aria-label={`Ver certificado de ${cert.title}`}
+        >
+          <i className="fa-solid fa-magnifying-glass"></i> Ver Certificado
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
+```
+
+## Diploma Modal
+
+Clicking the "Ver Certificado" button calls `mostrarDiploma(cert.id)`, imported from `src/utils/modalDiploma.js`:
+
+```jsx
+import mostrarDiploma from "../utils/modalDiploma.js";
+
+<button onClick={() => mostrarDiploma(cert.id)}>
+  Ver Certificado
+</button>
+```
+
+The modal markup is rendered at the bottom of the component's JSX and is controlled entirely by `modalDiploma.js`:
+
+```jsx
+<div id="diplomaModal" className="modal">
+  <span className="close">&times;</span>
+  <img className="modal-content" id="modalImage" />
+</div>
+```
+
+`mostrarDiploma(id)` uses the numeric `id` to look up the correct diploma image and sets it as the `src` of `#modalImage`, then makes `#diplomaModal` visible. The `×` close button hides the modal again.
+
+<Tip>
+  The diploma images themselves are managed inside `src/utils/modalDiploma.js`. To update or add diploma images, edit the lookup logic in that utility file and ensure the image assets are placed in the appropriate directory.
+</Tip>
+
+## CSS — `@styles/Certificados.css`
+
+Styles for the certifications section live in `src/styles/Certificados.css`:
+
+| Class | Purpose |
+|---|---|
+| `certificados-container` | Outer wrapper for the entire component |
+| `view-toggle-container` | Positions the view-switch button |
+| `view-toggle-btn` | Styles the toggle button (icon + label) |
+| `timeline-content` | Card-like box wrapping each timeline entry's text |
+| `title` | Bold certification title text |
+| `institucion` | Institution name with trophy icon |
+| `fecha` | Date string (visible in cards view; hidden in timeline view) |
+| `cards-container` | CSS grid or flex wrapper for the card grid layout |
+| `card` / `card-content` | Individual certification card box |
+| `view-link` | "Ver Certificado" button styling |
+| `modal` | Full-screen overlay for diploma images |
+| `modal-content` | The `<img>` element inside the modal |
+| `close` | The `×` dismiss button |
+
+## Adding a New Certification
+
+<Steps>
+  <Step title="Add an entry to the array">
+    Open `src/components/Certifications.jsx` and append a new object to the `certificados` array. Use the next sequential integer as the `id`:
+    ```jsx
+    {
+      id: 7,
+      title: "Your Certification Title",
+      institucion: "Issuing Institution",
+      fecha: "2024-03",
+    },
+    ```
+  </Step>
+  <Step title="Add the diploma image">
+    Place the diploma image in the assets directory used by `src/utils/modalDiploma.js` and register it in that utility's lookup — consult `modalDiploma.js` for the exact import pattern and array/object structure it uses.
+  </Step>
+  <Step title="Verify the connector logic">
+    The `TimelineConnector` is rendered for every item except the last: `cert.id < certificados.length - 1`. Because this check uses the array's `length`, it updates automatically when you add a new entry — no manual change needed.
+  </Step>
+</Steps>
+
+## Dependencies
+
+| Package | Usage |
+|---|---|
+| `@mui/lab` | `Timeline`, `TimelineItem`, `TimelineSeparator`, `TimelineConnector`, `TimelineContent`, `TimelineDot` |
+| `src/utils/modalDiploma.js` | `mostrarDiploma(id)` — opens diploma image in `#diplomaModal` |
+| Font Awesome (CDN/CSS) | `fa-solid fa-trophy`, `fa-solid fa-magnifying-glass`, `fa-solid fa-table-cells-large`, `fa-solid fa-timeline` |

@@ -1,0 +1,176 @@
+---
+title: "EmailJS Contact Form Integration"
+sidebarTitle: "Contact Form"
+description: "The contact form uses EmailJS to send messages directly from the browser — no back-end server required. Configure your service ID, template ID, and public key."
+---
+
+The contact section of Hector Portfolio lets visitors send messages directly from the browser using [EmailJS](https://www.emailjs.com). EmailJS acts as a bridge between the client-side form and a real email service (Gmail, Outlook, etc.), meaning there is no Node.js endpoint, no server deployment, and no CORS configuration needed to receive contact messages.
+
+## How EmailJS Works
+
+When the form is submitted, the `@emailjs/browser` package makes a direct HTTPS call to EmailJS servers, which in turn forward the message to the configured email service using the credentials you provide. Everything runs in the visitor's browser.
+
+## The Three Identifiers
+
+Every `emailjs.sendForm()` call requires three pieces of information. Two are already hard-coded in `src/components/Formulario.jsx`; one must be supplied via an environment variable.
+
+| Identifier | Source | Value |
+|---|---|---|
+| Service ID | Environment variable `Email_key` | Your own EmailJS service ID |
+| Template ID | Hard-coded in `Formulario.jsx` | `"template_40uel95"` |
+| Public Key | Hard-coded in `Formulario.jsx` | `"tvVn2ElRQmSkAAMc2"` |
+
+```jsx
+// src/components/Formulario.jsx
+const key = process.env.Email_key; // Service ID from .env
+
+emailjs.sendForm(
+  key,                   // process.env.Email_key  → your EmailJS service ID
+  "template_40uel95",    // template ID (hard-coded)
+  form.current,          // ref to the <form> element
+  "tvVn2ElRQmSkAAMc2"    // public key (hard-coded)
+)
+```
+
+## Form Fields
+
+The `<form>` element uses a React `ref` (`form.current`) so that EmailJS can read the field values directly from the DOM. Each field name must match the template variables defined in your EmailJS template.
+
+| `name` attribute | Type | Label key |
+|---|---|---|
+| `user_name` | `text` | `contact.name` |
+| `user_email` | `email` | `contact.email` |
+| `asunto` | `text` | `contact.subject` |
+| `message` | `textarea` | `contact.message` |
+
+## Setup Steps
+
+<Steps>
+  <Step title="Create an EmailJS account">
+    Go to [https://www.emailjs.com](https://www.emailjs.com) and sign up for a free account. The free tier allows up to 200 emails per month.
+  </Step>
+  <Step title="Create a service and note the Service ID">
+    In the EmailJS dashboard, navigate to **Email Services** and connect your email provider (Gmail, Outlook, or any SMTP service). After saving, EmailJS generates a **Service ID** (e.g. `service_xxxxxxx`). Copy it — you will need it in step 4.
+  </Step>
+  <Step title="Create an email template with the required variables">
+    Go to **Email Templates** and create a new template. Your template body must reference these four variables so that the values submitted by the visitor are forwarded correctly:
+
+    ```
+    From: {{user_name}} <{{user_email}}>
+    Subject: {{asunto}}
+
+    {{message}}
+    ```
+
+    Save the template. The template ID is already set to `template_40uel95` in the source — if you use a different template, update that string in `Formulario.jsx`.
+  </Step>
+  <Step title="Set the Email_key environment variable">
+    Create a `.env` file in the project root (if one does not already exist) and add your Service ID:
+
+    ```bash
+    # .env
+    Email_key=your_service_id
+    ```
+
+    Vite exposes this to the client bundle as `process.env.Email_key`, which `Formulario.jsx` reads on mount.
+  </Step>
+  <Step title="Verify the public key and template ID">
+    The public key (`tvVn2ElRQmSkAAMc2`) and the template ID (`template_40uel95`) are already hard-coded in `src/components/Formulario.jsx`. If you are using your own EmailJS account you must replace both values with your own account's public key (found under **Account → API Keys**) and your template ID.
+  </Step>
+</Steps>
+
+<Note>
+  Never commit your `.env` file to version control. Add it to `.gitignore` immediately:
+
+  ```
+  # .gitignore
+  .env
+  .env.local
+  ```
+
+  The `Email_key` value grants sending rights on your EmailJS service and should be treated as a secret.
+</Note>
+
+## Success and Error Callbacks
+
+After `emailjs.sendForm()` resolves, two helper functions from `src/utils/sendForm.js` display user feedback via [SweetAlert2](https://sweetalert2.github.io):
+
+```jsx
+// src/components/Formulario.jsx
+emailjs
+  .sendForm(key, "template_40uel95", form.current, "tvVn2ElRQmSkAAMc2")
+  .then(
+    (result) => {
+      form.current.reset(); // clear all fields
+      exito();              // show success alert
+    },
+    (error) => {
+      noEnviado();          // show error alert
+    }
+  );
+```
+
+### `exito()` — Success notification
+
+Displays a centred SweetAlert2 modal with a success icon. It auto-closes after 2 seconds.
+
+```js
+// src/utils/sendForm.js
+function exito() {
+  Swal.fire({
+    position: "center",
+    icon: "success",
+    title: "Mensaje enviado con éxito",
+    showConfirmButton: false,
+    timer: 2000,
+    text: "Pronto nos pondremos en contacto",
+  });
+}
+```
+
+### `noEnviado()` — Error notification
+
+Displays a SweetAlert2 modal with an error icon and a message asking the user to fill in all fields.
+
+```js
+// src/utils/sendForm.js
+function noEnviado() {
+  Swal.fire({
+    title: "Vaya! algo ha salido mal",
+    text: "Por favor, rellene todos los campos",
+    icon: "error",
+  });
+}
+```
+
+## Form Toggle UI
+
+The contact section includes a circular toggle button that shows or hides the form. The `viewForm` state is initialised to `true`, meaning the form is **open by default** when the page loads.
+
+```jsx
+// src/components/Formulario.jsx
+const [viewForm, setViewForm] = useState(true); // starts open
+
+const verForm = () => {
+  setViewForm(!viewForm);
+};
+```
+
+The toggle button renders an **X** icon when the form is visible and a **Mail** icon when it is hidden. The form wrapper transitions between a fully visible state and a collapsed state using CSS opacity and `maxHeight`.
+
+```jsx
+<button
+  onClick={verForm}
+  title={viewForm ? t('contact.closeForm') : t('contact.openForm')}
+>
+  {viewForm ? <X size={24} color="white" /> : <Mail size={24} color="white" />}
+</button>
+
+<div style={{ ...(viewForm ? styles.visible : styles.hidden) }}>
+  {/* form fields */}
+</div>
+```
+
+<Tip>
+  The form is theme-aware and reads `isDarkMode` from `useDarkMode()` to apply the correct background colours, border colours, and shadow intensities. No extra setup is required — it automatically respects whichever theme the visitor has selected.
+</Tip>

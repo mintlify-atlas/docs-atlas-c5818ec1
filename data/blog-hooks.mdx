@@ -1,0 +1,351 @@
+---
+title: "Blog React Hooks Reference"
+sidebarTitle: "Blog Hooks"
+description: "Four custom React hooks in src/hooks/useBlog.js wrap BlogService calls and expose loading/error state for use in any component."
+---
+
+The Hector Portfolio blog logic is split cleanly between a data layer (`BlogService`) and a React layer. The React layer lives in two files: `src/hooks/useBlog.js`, which exports five hooks for fetching and filtering posts, and `src/hooks/useComments.js`, which exports one hook for managing comment submission. Together they provide every piece of state a blog component needs — loading indicators, error messages, and the data itself — without any component knowing how `BlogService` works internally.
+
+## Hooks in `src/hooks/useBlog.js`
+
+### `useBlog()`
+
+Fetches the full list of blog posts on component mount by calling `BlogService.getAllPosts()`.
+
+**Signature**
+
+```ts
+function useBlog(): {
+  posts: Post[];
+  loading: boolean;
+  error: string | null;
+}
+```
+
+**Behaviour**
+- `loading` starts as `true` and flips to `false` once the `BlogService` call settles (resolved or rejected).
+- On success, `posts` is populated with the sorted array and `error` is set to `null`.
+- On failure, `posts` is reset to `[]` and `error` holds the thrown `Error.message` string.
+- The `useEffect` has an empty dependency array, so the fetch runs exactly once per mount.
+
+**Example**
+
+```jsx
+import { useBlog } from '../hooks/useBlog';
+
+function BlogList() {
+  const { posts, loading, error } = useBlog();
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
+
+  return (
+    <ul>
+      {posts.map(p => (
+        <li key={p._id}>{p.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+---
+
+### `useBlogPost(slug)`
+
+Fetches a single post by its slug whenever the `slug` value changes.
+
+**Signature**
+
+```ts
+function useBlogPost(slug: string): {
+  post: Post | null;
+  loading: boolean;
+  error: string | null;
+}
+```
+
+<ParamField path="slug" type="string" required>
+  The URL-safe slug string that identifies the post. Typically sourced from `useParams()`. The fetch is **skipped** if `slug` is falsy — useful when the param has not yet resolved.
+</ParamField>
+
+**Behaviour**
+- `post` starts as `null` and is populated after a successful fetch.
+- If `BlogService.getPostBySlug` throws (e.g. `'Post no encontrado'`), `post` is reset to `null` and `error` receives the message.
+- The effect re-runs whenever `slug` changes, making it safe to use on dynamic routes.
+
+**Example**
+
+```jsx
+import { useParams } from 'react-router-dom';
+import { useBlogPost } from '../hooks/useBlog';
+
+function PostDetail() {
+  const { slug } = useParams();
+  const { post, loading, error } = useBlogPost(slug);
+
+  if (loading) return <p>Cargando post...</p>;
+  if (error) return <p>{error}</p>;
+  if (!post) return null;
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <div dangerouslySetInnerHTML={{ __html: post.content }} />
+    </article>
+  );
+}
+```
+
+---
+
+### `useBlogFilter(posts, filters)`
+
+Applies one or more filters to an existing array of posts. This hook is **synchronous** — it uses `useMemo` internally and has no side effects or async calls.
+
+**Signature**
+
+```ts
+function useBlogFilter(
+  posts: Post[],
+  filters?: {
+    category?: string;
+    tags?: string[];
+    search?: string;
+  }
+): Post[]
+```
+
+<ParamField path="posts" type="Post[]" required>
+  The source array to filter. Typically the `posts` array returned by `useBlog()`.
+</ParamField>
+<ParamField path="filters.category" type="string">
+  Exact-match filter on `post.category`. Posts that do not match are removed.
+</ParamField>
+<ParamField path="filters.tags" type="string[]">
+  Array of tag strings. A post passes this filter if **any** of the provided tags appears in `post.tags`.
+</ParamField>
+<ParamField path="filters.search" type="string">
+  Case-insensitive substring search applied to `post.title` and `post.excerpt`. Tags are **not** searched by this hook (unlike `BlogService.searchPosts`).
+</ParamField>
+
+**Filter application order**
+
+Filters are applied sequentially: `category` → `tags` → `search`. A post must pass every active filter to appear in the result.
+
+**Example**
+
+```jsx
+import { useBlog, useBlogFilter } from '../hooks/useBlog';
+
+function SapBlog() {
+  const { posts, loading } = useBlog();
+
+  // Show only SAP posts that mention "FIFO" in title or excerpt
+  const filtered = useBlogFilter(posts, {
+    category: 'SAP',
+    search: 'FIFO'
+  });
+
+  if (loading) return <p>Cargando...</p>;
+
+  return (
+    <ul>
+      {filtered.map(p => <li key={p._id}>{p.title}</li>)}
+    </ul>
+  );
+}
+```
+
+<Tip>
+  `useBlogFilter` is already memoised with `useMemo` — it only recomputes when `posts`, `category`, `tags`, or `search` changes. You do **not** need to wrap the result in another `useMemo` in your consuming component; doing so would add overhead without benefit.
+</Tip>
+
+---
+
+### `useBlogCategories()`
+
+Fetches the deduplicated list of categories from `BlogService.getCategories()` on mount.
+
+**Signature**
+
+```ts
+function useBlogCategories(): {
+  categories: string[];
+  loading: boolean;
+  error: string | null;
+}
+```
+
+**Behaviour**
+- Calls `BlogService.getCategories()` once on mount (empty `useEffect` dependency array).
+- `categories` starts as `[]` and is populated after the 200 ms simulated delay resolves.
+- On error, `categories` remains `[]` and `error` holds the message string.
+
+**Example**
+
+```jsx
+import { useBlogCategories } from '../hooks/useBlog';
+
+function CategoryFilter({ onSelect }) {
+  const { categories, loading } = useBlogCategories();
+
+  if (loading) return <p>Cargando categorías...</p>;
+
+  return (
+    <nav>
+      {categories.map(cat => (
+        <button key={cat} onClick={() => onSelect(cat)}>{cat}</button>
+      ))}
+    </nav>
+  );
+}
+```
+
+---
+
+### `useBlogTags()`
+
+Fetches the deduplicated list of all tags from `BlogService.getTags()` on mount.
+
+**Signature**
+
+```ts
+function useBlogTags(): {
+  tags: string[];
+  loading: boolean;
+  error: string | null;
+}
+```
+
+**Behaviour**
+- Calls `BlogService.getTags()` once on mount.
+- `tags` starts as `[]` and is filled with the flattened, deduplicated tag list after the 200 ms delay.
+- On error, `tags` remains `[]` and `error` holds the message string.
+
+**Example**
+
+```jsx
+import { useBlogTags } from '../hooks/useBlog';
+
+function TagCloud({ onSelect }) {
+  const { tags, loading } = useBlogTags();
+
+  if (loading) return null;
+
+  return (
+    <div className="tag-cloud">
+      {tags.map(tag => (
+        <span key={tag} onClick={() => onSelect(tag)}>#{tag}</span>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## `useComments` Hook (`src/hooks/useComments.js`)
+
+Comment submission logic lives in its own file: `src/hooks/useComments.js`. It exports a single hook.
+
+### `useComments(slug)`
+
+Manages local comment state and the async submission flow for a specific post.
+
+**Signature**
+
+```ts
+function useComments(slug: string): {
+  comments: Comment[];
+  setComments: Dispatch<SetStateAction<Comment[]>>;
+  addComment: (commentData: { author: string; email?: string; content: string }) => Promise<Comment>;
+  loading: boolean;
+  error: string | null;
+  success: boolean;
+  clearError: () => void;
+  clearSuccess: () => void;
+}
+```
+
+<ParamField path="slug" type="string" required>
+  Slug of the post whose comments are being managed. Passed through to `BlogService.addComment`.
+</ParamField>
+
+**Return values**
+
+<ResponseField name="comments" type="Comment[]">
+  Local array of comments submitted during this session. Starts empty — you should seed it with the post's existing `comments` array via `setComments` after fetching the post.
+</ResponseField>
+<ResponseField name="setComments" type="function">
+  React state setter. Use this to initialise the local list with the post's `comments` once the post has loaded.
+</ResponseField>
+<ResponseField name="addComment" type="async function">
+  Calls `BlogService.addComment(slug, commentData)`, prepends the returned `Comment` to the local `comments` array on success, and sets `success` to `true` for 3 seconds. Rethrows on failure so the calling component can react.
+</ResponseField>
+<ResponseField name="loading" type="boolean">
+  `true` only while `addComment` is in-flight. Starts as `false` — unlike the blog-fetch hooks, this hook does not fetch on mount.
+</ResponseField>
+<ResponseField name="error" type="string | null">
+  Holds the error message if `BlogService.addComment` throws (e.g. validation failures such as `'El nombre es requerido'`).
+</ResponseField>
+<ResponseField name="success" type="boolean">
+  Set to `true` for 3 seconds after a successful `addComment` call, then automatically reset to `false`. Useful for showing a confirmation banner.
+</ResponseField>
+<ResponseField name="clearError" type="function">
+  Resets `error` to `null`. Call this when the user starts typing to dismiss an inline error message.
+</ResponseField>
+<ResponseField name="clearSuccess" type="function">
+  Manually resets `success` to `false` before the 3-second timer fires.
+</ResponseField>
+
+**Example**
+
+```jsx
+import { useBlogPost } from '../hooks/useBlog';
+import { useComments } from '../hooks/useComments';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+
+function PostPage() {
+  const { slug } = useParams();
+  const { post, loading: postLoading } = useBlogPost(slug);
+  const { comments, setComments, addComment, loading, error, success } = useComments(slug);
+
+  // Seed local comments list from the fetched post
+  useEffect(() => {
+    if (post?.comments) setComments(post.comments);
+  }, [post]);
+
+  const handleSubmit = async (formData) => {
+    try {
+      await addComment(formData);
+    } catch {
+      // error is already captured in the hook's `error` state
+    }
+  };
+
+  if (postLoading) return <p>Cargando...</p>;
+
+  return (
+    <section>
+      <h1>{post?.title}</h1>
+
+      {success && <p className="success">¡Comentario enviado! Pendiente de moderación.</p>}
+      {error && <p className="error">{error}</p>}
+
+      <CommentForm onSubmit={handleSubmit} disabled={loading} />
+
+      <ul>
+        {comments.map(c => (
+          <li key={c.id}><strong>{c.author}</strong>: {c.content}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+<Note>
+  Comments added via `addComment` are prepended to the local `comments` array immediately (optimistic-style) but are **not persisted** — they exist only for the current session. In production, connect `BlogService.addComment` to a backend endpoint that writes to a database, then re-fetch the post's comment list to reflect the saved state.
+</Note>

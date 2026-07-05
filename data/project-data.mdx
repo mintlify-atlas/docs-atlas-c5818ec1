@@ -1,0 +1,198 @@
+---
+title: "Project Data Arrays: galerimages.js Reference"
+sidebarTitle: "Project Data"
+description: "All portfolio project data lives in src/utils/galerimages.js. Learn the exported arrays, the project object shape, and how to add or update projects."
+---
+
+All project content displayed throughout the Hector Portfolio site is centralised in a single module: `src/utils/galerimages.js`. The file imports every project screenshot or icon at the top level, organises them into named arrays, and re-exports them so that page components consume a single, predictable source of truth. Understanding this file is the first step for adding, removing, or rearranging portfolio entries.
+
+## Named Exports
+
+The module exposes six named exports. Each one serves a different section of the portfolio UI.
+
+<CardGroup cols={2}>
+  <Card title="imagesData" icon="image">
+    Legacy array of 6 icon entries (JavaScript, Node.js, CSS, HTML, React icons). **Not consumed by the projects page** — kept for historical reference only.
+  </Card>
+  <Card title="secondImages" icon="star">
+    **Main project array.** Consumed by `aplicaciones.jsx` to render the featured project cards grid. This is the array you edit to add or update showcase projects.
+  </Card>
+  <Card title="imagesTodowebp" icon="grid-2">
+    Plain object mapping short keys to imported `.webp` / `.png` assets. Used by the vanilla mini-apps section of the portfolio.
+  </Card>
+  <Card title="section1Projects" icon="code">
+    JavaScript category projects rendered in their own filtered section.
+  </Card>
+  <Card title="section2Projects" icon="server">
+    Node.js category projects rendered in their own filtered section.
+  </Card>
+  <Card title="section3Projects" icon="palette">
+    CSS / HTML category projects rendered in their own filtered section.
+  </Card>
+</CardGroup>
+
+## Project Object Shape
+
+Every entry in `secondImages`, `section1Projects`, `section2Projects`, and `section3Projects` follows the same object shape:
+
+```ts
+interface Project {
+  src: string;       // imported image asset (result of an ES module import)
+  alt: string;       // project title — also used as the card's accessible alt text
+  subtitle: string;  // tech stack tags, e.g. "NodeJs - React - MongoDB"
+  demo: string;      // live demo URL
+  repo: string;      // GitHub repository URL
+  featured?: boolean; // optional — reserved for a featured highlight row
+}
+```
+
+<Note>
+  The `src` field must be an **imported asset**, not a raw string path. Vite (or your bundler) resolves the import at build time and replaces it with the hashed output URL. Passing a plain string like `"/assets/my-project.webp"` will not be picked up by the asset pipeline.
+</Note>
+
+## `secondImages` — Current Projects
+
+`secondImages` is the array that powers the main `/aplicaciones` page. As of the current source, it contains six active entries (several others are commented out and can be re-enabled):
+
+| # | `alt` (title) | `subtitle` (tech stack) | Live Demo |
+|---|--------------|------------------------|-----------|
+| 1 | CRUD Lista tareas | `NodeJs - React - MongoDB` | [crudlistatareas.netlify.app](https://crudlistatareas.netlify.app/) |
+| 2 | Autenticación JWT | `NodeJs - ExpressJs - oAuth` | [autenticate.vercel.app](https://autenticate.vercel.app/) |
+| 3 | Generador Contraseñas | `Tailwind - NextJs` | [generatepassword-theta.vercel.app](https://generatepassword-theta.vercel.app/) |
+| 4 | TableExportJS | `NodeJs` | [table-export-js-4zq5.vercel.app](https://table-export-js-4zq5.vercel.app/) |
+| 5 | CRUD SAP | `NodeJs - Express - Odata - SAP` | [mega-crud-table-ui5.vercel.app](https://mega-crud-table-ui5.vercel.app/) |
+| 6 | apk pdf | `Visor PDF - Android` | [pdf-generator-nodejs.vercel.app](https://pdf-generator-nodejs.vercel.app/) |
+
+```js
+// src/utils/galerimages.js (secondImages — active entries)
+const secondImages = [
+  {
+    src: listtareas,
+    alt: 'CRUD Lista tareas',
+    subtitle: 'NodeJs - React - MongoDB',
+    demo: 'https://crudlistatareas.netlify.app/',
+    repo: 'https://github.com/iwinser117/nodeJs_react_crud'
+  },
+  {
+    src: login,
+    alt: 'Autenticación JWT',
+    subtitle: 'NodeJs - ExpressJs - oAuth',
+    demo: 'https://autenticate.vercel.app/',
+    repo: 'https://github.com/iwinser117/autenticate'
+  },
+  {
+    src: generatePassword,
+    alt: 'Generador Contraseñas',
+    subtitle: 'Tailwind - NextJs',
+    demo: 'https://generatepassword-theta.vercel.app/',
+    repo: 'https://github.com/iwinser117/generatepassword'
+  },
+  {
+    src: imgtablaExport,
+    alt: 'TableExportJS',
+    subtitle: 'NodeJs',
+    demo: 'https://table-export-js-4zq5.vercel.app/',
+    repo: 'https://github.com/iwinser117/TableExportJS'
+  },
+  {
+    src: crud_sap,
+    alt: 'CRUD SAP',
+    subtitle: 'NodeJs - Express - Odata - SAP',
+    demo: 'https://mega-crud-table-ui5.vercel.app/',
+    repo: 'https://github.com/iwinser117/mega-crud-table-ui5'
+  },
+  {
+    src: "",
+    alt: "apk pdf",
+    subtitle: "Visor PDF - Android",
+    demo: "https://pdf-generator-nodejs.vercel.app/",
+    repo: "https://github.com/iwinser117/pdf_reader"
+  }
+];
+```
+
+## Category Sections
+
+The three category arrays each hold projects for a specific technology focus:
+
+**`section1Projects` — JavaScript**
+
+| `alt` | `subtitle` | Demo |
+|-------|-----------|------|
+| Rick and Morty | `Consumo API - Paginación` | [api-rick-and-morty-17j9.vercel.app](https://api-rick-and-morty-17j9.vercel.app/) |
+
+**`section2Projects` — Node.js**
+
+| `alt` | `subtitle` | Demo |
+|-------|-----------|------|
+| Autenticación JWT | `Node.js - JWT - Express` | [autenticate.vercel.app](https://autenticate.vercel.app/) |
+| Generador Contraseñas | `Tailwind - NextJs` | [generatepassword-theta.vercel.app](https://generatepassword-theta.vercel.app/) |
+| TableExportJS | `Vanilla JS - CSV - XLSX` | [table-export-js-4zq5.vercel.app](https://table-export-js-4zq5.vercel.app/) |
+
+**`section3Projects` — CSS**
+
+| `alt` | `subtitle` | Demo |
+|-------|-----------|------|
+| Galería de Arte | `HTML - CSS - Lightbox` | [galery-art-rho.vercel.app](https://galery-art-rho.vercel.app/) |
+| Animación Background | `CSS - Animations - Responsive` | [iwinser117.github.io](https://iwinser117.github.io/https---github.com-iwinser117-css_background/) |
+| Plantilla Responsive | `HTML - CSS - Responsive` | [responsivetemplatecss.netlify.app](https://responsivetemplatecss.netlify.app/) |
+
+## `imagesTodowebp` Object Keys
+
+`imagesTodowebp` is a plain object (not an array) used by the vanilla mini-apps section. Each key maps to an imported asset:
+
+```js
+const imagesTodowebp = {
+  calcu: calcu,                       // Calculadora screenshot
+  contador: contador,                 // Contador screenshot
+  listtareas: listtareas,             // Lista de tareas screenshot
+  imgPaletaColores: imgPaletaColores, // Paleta de colores screenshot
+  cimgtablaExport: cimgtablaExport,   // Tabla Export screenshot
+  loginImg: loginImg,                 // Login screenshot
+  relojimg: relojimg,                 // Reloj screenshot
+  generatePassword: generatePassword, // Generador de contraseñas screenshot
+  rickandmorty: rickandmorty          // Rick and Morty API screenshot
+};
+```
+
+## Category Derivation
+
+<Note>
+  Category filter buttons shown on the `/aplicaciones` page are **not stored** inside `galerimages.js`. They are derived at render-time in `aplicaciones.jsx` by parsing each project's `subtitle` string. This means the filter labels update automatically whenever you change a `subtitle` value — no separate category list to maintain.
+</Note>
+
+## How to Add a New Project
+
+<Steps>
+  <Step title="Import the project image">
+    Add an import statement at the top of `src/utils/galerimages.js`, alongside the existing imports. Use the `@assets` alias that Vite resolves to `src/assets/`.
+
+    ```js
+    import myNewProject from '@assets/my-new-project.webp';
+    ```
+  </Step>
+  <Step title="Push an entry to secondImages">
+    Add a new object to the `secondImages` array. Fill in all required fields: `src`, `alt`, `subtitle`, `demo`, and `repo`.
+
+    ```js
+    const secondImages = [
+      // ...existing entries...
+      {
+        src: myNewProject,
+        alt: 'My New Project',
+        subtitle: 'React - TypeScript - TailwindCSS',
+        demo: 'https://my-new-project.vercel.app/',
+        repo: 'https://github.com/iwinser117/my-new-project'
+      }
+    ];
+    ```
+  </Step>
+  <Step title="Rebuild and verify">
+    Run the dev server or production build. The new project card will appear automatically in the `/aplicaciones` route. Because category filters are derived from `subtitle` at render-time, any new tech keywords in `subtitle` will surface as filter options without further changes.
+
+    ```bash
+    npm run dev
+    # Navigate to http://localhost:5173/aplicaciones
+    ```
+  </Step>
+</Steps>

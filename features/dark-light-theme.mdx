@@ -1,0 +1,203 @@
+---
+title: "Dark and Light Theme System in Hector Portfolio"
+sidebarTitle: "Theme System"
+description: "The portfolio uses a React context-based theme system with localStorage persistence. Consume the useDarkMode hook to read the current mode in any component."
+---
+
+Hector Portfolio ships with a first-class dark/light theme system built entirely on React context and the browser's `localStorage` API. No third-party theme library is required — the entire mechanism lives in `src/buttons/DarkModeProvider.jsx` and works transparently for every component in the tree.
+
+## How It Works
+
+### App-Level Wrapping
+
+`DarkModeProvider` is the outermost wrapper in `src/routes/App.jsx`. Every route — Home, Projects, Blog, and BlogPost — inherits the current theme without any extra configuration.
+
+```jsx
+// src/routes/App.jsx
+const App = () => {
+  return (
+    <DarkModeProvider>
+      <div className="app-container main-container">
+        <Routes>
+          <Route exact path="/"            element={<Home />} />
+          <Route        path="/aplicaciones" element={<Proyectos />} />
+          <Route        path="/blog"         element={<Blog />} />
+          <Route        path="/blog/:slug"   element={<BlogPost />} />
+        </Routes>
+      </div>
+    </DarkModeProvider>
+  );
+};
+```
+
+### The Context
+
+`DarkModeContext` is created with React's `createContext()`. Its value is the boolean `isDarkMode`, which defaults to `true` (dark mode on) when no saved preference exists in `localStorage`.
+
+```jsx
+// src/buttons/DarkModeProvider.jsx (simplified)
+const DarkModeContext = createContext();
+
+export const useDarkMode = () => useContext(DarkModeContext);
+```
+
+### localStorage Persistence
+
+The provider reads from and writes to the key `"dark-mode"` in `localStorage` so the chosen theme survives page reloads and browser restarts.
+
+```jsx
+const getInitialTheme = () => {
+  const savedTheme = localStorage.getItem("dark-mode");
+  return savedTheme ? JSON.parse(savedTheme) : true; // default: dark
+};
+
+const [isDarkMode, setIsDarkMode] = useState(getInitialTheme);
+
+useEffect(() => {
+  localStorage.setItem("dark-mode", JSON.stringify(isDarkMode));
+}, [isDarkMode]);
+```
+
+| localStorage key | Stored value | Default |
+|---|---|---|
+| `"dark-mode"` | `"true"` / `"false"` (JSON) | `true` (dark) |
+
+### CSS Class on the Wrapper Div
+
+`DarkModeProvider` renders a `div.dark-mode-container`. When `isDarkMode` is `true` the class `dark-mode` is added; when `false` the class string is empty.
+
+```jsx
+<div className={`dark-mode-container ${isDarkMode ? "dark-mode" : ""}`}>
+  {children}
+</div>
+```
+
+This single class switch is the hook point for all theme-specific CSS rules in `dark.css` and `light.css`.
+
+### The Hidden Checkbox Trick
+
+To avoid prop drilling the toggle handler, `DarkModeProvider` renders a hidden `<input type="checkbox">` with `id="input"` inside the wrapper div. The `onChange` handler calls `setIsDarkMode` to flip the theme.
+
+```jsx
+<input
+  id="input"
+  type="checkbox"
+  checked={!isDarkMode}
+  onChange={handleModeChange}
+  style={{ display: 'none' }}
+/>
+```
+
+Any component that needs to trigger a theme change simply programmatically clicks this element — no prop or callback needs to be passed down.
+
+### The `.bubbles` Animated Element
+
+When `isDarkMode` is `true`, `DarkModeProvider` renders an additional `<div className="bubbles">` at the bottom of the wrapper. This element provides the animated particle effect visible in dark mode. It is removed from the DOM entirely in light mode.
+
+```jsx
+{isDarkMode && <div className="bubbles"></div>}
+```
+
+## Using `useDarkMode()` in a Component
+
+Import the hook from `DarkModeProvider` and read the boolean inside any function component that is a descendant of `DarkModeProvider`.
+
+```jsx
+import { useDarkMode } from '@buttons/DarkModeProvider';
+
+const MyComponent = () => {
+  const isDark = useDarkMode();
+  return (
+    <div style={{ background: isDark ? '#1D232A' : '#F5F6F7' }}>
+      Content
+    </div>
+  );
+};
+```
+
+<Note>
+  `useDarkMode()` returns `undefined` if called outside the `DarkModeProvider` tree. Make sure the component is rendered as a child (direct or nested) of `DarkModeProvider`.
+</Note>
+
+## Triggering the Toggle from SettingsModal
+
+`SettingsModal` (and the alternative `SettingsButton`) expose Light Mode and Dark Mode buttons to the user. Both components trigger the theme change by programmatically clicking the hidden checkbox rendered by `DarkModeProvider`:
+
+```js
+const handleThemeToggle = () => {
+  const checkbox = document.getElementById("input");
+  if (checkbox) {
+    checkbox.click();
+  }
+};
+```
+
+## Theme Color Reference
+
+The following color values are used consistently throughout `DarkModeProvider`, `SettingsModal`, `SettingsButton`, and `Formulario`.
+
+<CardGroup cols={2}>
+  <Card title="Dark Mode Colors" icon="moon">
+    | Role | Value |
+    |---|---|
+    | Primary background | `#1D232A` |
+    | Secondary background | `#232946` |
+    | Primary text | `#F5F6F7` |
+    | Secondary text | `#e0e0e0` |
+  </Card>
+  <Card title="Light Mode Colors" icon="sun">
+    | Role | Value |
+    |---|---|
+    | Primary background | `#F5F6F7` |
+    | Secondary background | `#ffffff` |
+    | Primary text | `#232946` |
+    | Secondary text | `#354A5F` |
+  </Card>
+</CardGroup>
+
+## Complete Provider Source
+
+```jsx
+// src/buttons/DarkModeProvider.jsx
+import React, { useState, useEffect, createContext, useContext } from "react";
+import "@styles/botons.css";
+
+const DarkModeContext = createContext();
+
+export const useDarkMode = () => useContext(DarkModeContext);
+
+const DarkModeProvider = ({ children }) => {
+  const getInitialTheme = () => {
+    const savedTheme = localStorage.getItem("dark-mode");
+    return savedTheme ? JSON.parse(savedTheme) : true;
+  };
+
+  const [isDarkMode, setIsDarkMode] = useState(getInitialTheme);
+
+  useEffect(() => {
+    localStorage.setItem("dark-mode", JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  const handleModeChange = () => {
+    setIsDarkMode((prevMode) => !prevMode);
+  };
+
+  return (
+    <DarkModeContext.Provider value={isDarkMode}>
+      <div className={`dark-mode-container ${isDarkMode ? "dark-mode" : ""}`}>
+        <input
+          id="input"
+          type="checkbox"
+          checked={!isDarkMode}
+          onChange={handleModeChange}
+          style={{ display: 'none' }}
+        />
+        {children}
+        {isDarkMode && <div className="bubbles"></div>}
+      </div>
+    </DarkModeContext.Provider>
+  );
+};
+
+export default DarkModeProvider;
+```

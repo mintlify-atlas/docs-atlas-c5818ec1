@@ -1,0 +1,212 @@
+---
+title: "Blog: Technical Articles with Category Filtering"
+sidebarTitle: "Blog"
+description: "The /blog route lists technical articles loaded from a local JSON data source. Posts are filterable by category and navigable to a full-page view at /blog/:slug."
+---
+
+The Blog section of Hector Portfolio publishes technical articles focused on SAP, web development, and related technology. The list view at `/blog` supports category tabs, tag chips, and free-text search. Clicking any post card navigates to the full article at `/blog/:slug`, which renders the post's HTML content, displays metadata, and exposes an inline image injection system using `{{img-X}}` markers.
+
+## Routes
+
+| Path | Component | Description |
+|------|-----------|-------------|
+| `/blog` | `Blog.jsx` → `BlogListModern` | Paginated list with category, tag, and search filters |
+| `/blog/:slug` | `BlogPost.jsx` | Single-post full-page view |
+
+### `Blog.jsx` composition
+
+```jsx
+// src/pages/Blog.jsx
+import BlogListModern from "../containers/BlogListModern";
+import Nav            from "@components/Nav";
+import Footer         from "@components/Footer";
+import BtnArriba      from "@buttons/BtnArriba";
+
+const Blog = () => {
+  return (
+    <div className="data-bs-theme-dark letra-home">
+      <Nav />
+      <BlogListModern />
+      <Footer />
+      <BtnArriba />
+    </div>
+  );
+};
+```
+
+## Data Source
+
+Posts are stored in `src/data/posts.json` as a local JSON array. `BlogService.getAllPosts()` reads this file and returns the posts sorted by `date` descending so the newest article always appears first.
+
+## Post Data Shape
+
+Each post object follows this schema (see `EXAMPLE_POST.json`):
+
+```json
+{
+  "_id": "post-example-sap-advanced",
+  "title": "Post title",
+  "slug": "post-slug",
+  "author": "Author Name",
+  "date": "2026-02-05",
+  "category": "SAP",
+  "tags": ["SAP", "MM", "Tutorial"],
+  "excerpt": "Short summary",
+  "content": "<h2>HTML content</h2>...",
+  "image": "https://...",
+  "views": 0,
+  "comments": []
+}
+```
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `_id` | `string` | Unique identifier |
+| `title` | `string` | Displayed as the card heading and post `<h1>` |
+| `slug` | `string` | URL segment — must be unique, lowercase, and hyphen-separated |
+| `author` | `string` | Shown in the card footer and post header |
+| `date` | `string` | ISO date (`YYYY-MM-DD`); used for sorting and display |
+| `category` | `string` | Used for the category tab filter (e.g., `"SAP"`, `"React"`) |
+| `tags` | `string[]` | Shown as `#tag` chips; first 3 shown in the card, all shown in the post |
+| `excerpt` | `string` | Short summary shown in the list card |
+| `content` | `string` | Full post body as an HTML string; rendered via `dangerouslySetInnerHTML` |
+| `image` | `string \| string[]` | Cover image URL or array of image URLs |
+| `views` | `number` | Incremented automatically by `BlogService.incrementViewCount()` on post load |
+| `comments` | `array` | Array of comment objects (see [Comment shape](#comment-data-shape)) |
+
+### Inline image markers
+
+When `image` is an array, the content string may contain `{{img-0}}`, `{{img-1}}`, etc. placeholders. `BlogPost` replaces each marker with a `<figure>` element containing the corresponding URL from the array:
+
+```js
+// BlogPost.jsx — processContent()
+imageArray.forEach((imgUrl, index) => {
+  const marker = `{{img-${index}}}`;
+  const imgHtml = `<figure class="blog-post__inline-image">
+    <img src="${imgUrl}" alt="Imagen ${index + 1} del post" />
+    <figcaption>Imagen ${index + 1}</figcaption>
+  </figure>`;
+  processedContent = processedContent.replace(new RegExp(marker, "g"), imgHtml);
+});
+```
+
+## `BlogListModern` Features
+
+`BlogListModern` (`src/containers/BlogListModern.jsx`) is the main container rendered at `/blog`. It provides:
+
+- **Category tabs** — built from `useBlogCategories()`. Clicking a tab sets `selectedCategory`; clicking "Todos" clears it. Each tab shows the post count for that category.
+- **Tag chips** — built from `useBlogTags()`. Up to 8 tags are shown by default; a **+N más** button reveals the rest. Selected tags are highlighted and show a `✕` to deactivate.
+- **Free-text search** — filters posts by title, excerpt, and content via `useBlogFilter()`. A clear button (`✕`) appears inside the input when a query is present.
+- **Active filters bar** — when any filter is active, a summary row shows the active category, tags, and search query with individual remove buttons and a "Limpiar todo" button.
+- **Pagination** — 9 posts per page (`POSTS_PER_PAGE = 9`). Previous / Next buttons scroll back to the top on page change.
+- **Contact CTA** — a call-to-action section and `<Formulario />` are appended after the grid.
+
+## `BlogPost` Features
+
+`BlogPost` (`src/containers/BlogPost.jsx`) is rendered at `/blog/:slug`. It:
+
+1. Reads the `slug` param via `useParams()`.
+2. Fetches the post with `useBlogPost(slug)`.
+3. Calls `BlogService.incrementViewCount(slug)` in a `useEffect` once the post is loaded.
+4. Renders the post header (category, date, views, title, author), the cover image, and the processed HTML `content`.
+5. Renders all tags as links to `/blog?tag=<tag>` for cross-filtering.
+6. Provides a breadcrumb (`Blog / Post title`) and a back link.
+
+## Adding a New Blog Post
+
+<Steps>
+  <Step title="Open the posts data file">
+    Open `src/data/posts.json` in your editor.
+  </Step>
+  <Step title="Add a new post object">
+    Append a new JSON object to the array, following the schema above. Place it at the beginning of the array to have it appear first (posts are sorted descending by `date`, so a more recent `date` also works):
+    ```json
+    {
+      "_id": "post-my-new-article",
+      "title": "My New Article",
+      "slug": "my-new-article",
+      "author": "Iwinser Sanchez",
+      "date": "2026-03-01",
+      "category": "React",
+      "tags": ["React", "Hooks", "Tutorial"],
+      "excerpt": "A short summary of the article visible in the list view.",
+      "content": "<h2>Introduction</h2><p>Article body goes here.</p>",
+      "image": "https://your-cdn.com/cover.png",
+      "views": 0,
+      "comments": []
+    }
+    ```
+  </Step>
+  <Step title="Set a unique slug">
+    The `slug` becomes the URL path segment at `/blog/<slug>`. It must be:
+    - unique across all posts
+    - lowercase
+    - words separated by hyphens (no spaces or special characters)
+
+    Example: `"sap-btp-cap-getting-started"`
+  </Step>
+  <Step title="Write the content as an HTML string">
+    The `content` field is rendered directly as HTML. Supported elements include `<h2>`, `<h3>`, `<ul>`, `<ol>`, `<li>`, `<p>`, `<pre>`, `<strong>`, `<em>`, and `<figure>`. To embed images inline, set `image` to an array and use `{{img-0}}`, `{{img-1}}`, etc. markers in the content string:
+    ```json
+    "image": [
+      "https://cdn.example.com/cover.png",
+      "https://cdn.example.com/screenshot.png"
+    ],
+    "content": "<h2>Step 1</h2><p>Description.</p>{{img-1}}<h2>Step 2</h2>"
+    ```
+  </Step>
+  <Step title="Save and rebuild">
+    Save `posts.json`. On the next build (or hot-module reload in development) the post appears automatically at `/blog` and is accessible at `/blog/<slug>`.
+  </Step>
+</Steps>
+
+## Comment Data Shape
+
+Comments are stored as an array nested inside each post object:
+
+```json
+{
+  "id": "comment-example-001",
+  "author": "Juan García",
+  "email": "juan@example.com",
+  "content": "Great article!",
+  "date": "2026-02-06",
+  "approved": true
+}
+```
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | `string` | Unique comment identifier |
+| `author` | `string` | Required — display name of the commenter |
+| `email` | `string` | Optional — not displayed publicly |
+| `content` | `string` | Required — must be at least 3 characters |
+| `date` | `string` | ISO date string set at submission time |
+| `approved` | `boolean` | Always `false` for new comments from `addComment()` |
+
+## `BlogService.addComment()`
+
+`BlogService.addComment()` validates the submission before creating the comment object:
+
+- `author` is **required**; an empty value throws a validation error.
+- `content` is **required** and must be at least **3 characters** long.
+- The returned object always has `approved: false`.
+
+```js
+// Example usage
+const newComment = BlogService.addComment(slug, {
+  author: "Jane Doe",
+  email: "jane@example.com",
+  content: "Very helpful, thanks!"
+});
+// newComment.approved === false
+```
+
+<Note>
+  Comments added via `addComment()` are **not persisted to disk**. The JSON data file is static at build time. To enable persistent comments in production, connect `BlogService` to a real backend API or a hosted database.
+</Note>
+
+## Related
+
+- [BlogService API reference](/data/blog-service)
+- [Blog hooks (`useBlog`, `useBlogPost`, `useBlogFilter`)](/data/blog-hooks)

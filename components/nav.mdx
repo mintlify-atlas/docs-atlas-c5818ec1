@@ -1,0 +1,269 @@
+---
+title: "Nav Component: Responsive Portfolio Navigation"
+sidebarTitle: "Nav"
+description: "The Nav component provides a scroll-aware, responsive navigation bar with route-aware links, a dark/light mode toggle, and a language switcher."
+---
+
+The `Nav` component is the primary navigation bar for the Hector Portfolio. It sits fixed at the top of every page, hides gracefully as the user scrolls down, reappears on scroll-up, and conditionally renders links based on the current route. It also hosts the `SettingsButton`, which opens a slide-in panel for toggling dark/light mode and switching between English and Spanish.
+
+## Source File
+
+**`src/components/Nav.jsx`**
+
+## What It Renders
+
+`Nav` outputs a Bootstrap `navbar` containing three areas:
+
+| Area | Content |
+|---|---|
+| **Left** | Logo image — dark or light variant based on `useDarkMode()` |
+| **Centre** | Conditional nav links and anchor links |
+| **Right** | `SettingsButton` (gear icon + modal panel) |
+
+```jsx
+<nav id="navbar" className="navbar navbar-expand-lg">
+  <div className="container-fluid w-75" id="n2">
+    <img className="navbar-brand" src={isDarkMode ? logoblack : logowhite} width="60px" alt="logoIS" />
+    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" ...>
+      <span className="navbar-toggler-icon"></span>
+    </button>
+    <div className="collapse navbar-collapse" id="navbarNav">
+      <ul className="navbar-nav nav-ul">
+        {/* conditional nav items */}
+        <li className="nav-item nav-settings-item">
+          <SettingsButton />
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+```
+
+## Logo — Dark / Light Mode
+
+The logo asset is swapped at runtime using the `useDarkMode()` hook from `DarkModeProvider`:
+
+```jsx
+import logowhite from "@assets/ok.svg";          // shown in light mode
+import logoblack from "@assets/ok_white_bgsvg.svg"; // shown in dark mode
+import { useDarkMode } from "../buttons/DarkModeProvider";
+
+const isDarkMode = useDarkMode();
+
+<img src={isDarkMode ? logoblack : logowhite} width="60px" alt="logoIS" />
+```
+
+<Note>
+  `ok.svg` uses a white foreground (suitable for dark backgrounds). `ok_white_bgsvg.svg` uses a dark foreground (suitable for light backgrounds). The names can seem counter-intuitive — always rely on the `isDarkMode` boolean rather than the file name.
+</Note>
+
+## Nav Links
+
+Links are rendered conditionally to avoid showing the active route as a clickable item. React Router's `useLocation()` provides the current path.
+
+<CardGroup cols={2}>
+  <Card title="Home" icon="house">
+    Route: `/`  
+    Rendered with `<NavLink to="/">`.  
+    **Hidden** when `location.pathname === "/"`.  
+    Icon: `FaHome`
+  </Card>
+  <Card title="Skills" icon="brain">
+    Anchor: `#habilidades`  
+    Rendered as `<a href="#habilidades">`.  
+    **Hidden** when on `/aplicaciones` or `/blog`.  
+    Icon: `FaBrain`
+  </Card>
+  <Card title="Applications" icon="laptop-code">
+    Route: `/aplicaciones`  
+    Rendered with `<NavLink to="/aplicaciones">`.  
+    **Hidden** when `location.pathname === "/aplicaciones"`.  
+    Icon: `FaLaptopCode`
+  </Card>
+  <Card title="Contact me" icon="envelope">
+    Anchor: `#contactame`  
+    Rendered as `<a href="#contactame">`.  
+    **Always visible** on every route.  
+    Icon: `FaEnvelope`
+  </Card>
+  <Card title="Blog" icon="blog">
+    Route: `/blog`  
+    Rendered as `<a href="/blog">`.  
+    **Hidden** when `location.pathname === "/blog"`.  
+    Icon: `FaBlog`
+  </Card>
+  <Card title="SettingsButton" icon="gear">
+    Always visible.  
+    Opens a slide-in modal for theme and language settings.  
+    No i18n key — icon only in the navbar.
+  </Card>
+</CardGroup>
+
+The full conditional rendering block from source:
+
+```jsx
+{location.pathname !== "/" ? (
+  <li className="nav-item">
+    <NavLink className="nav-link" to={"/"}>
+      <FaHome style={{ marginRight: "5px" }} /> {t("nav.home")}
+    </NavLink>
+  </li>
+) : null}
+
+{(location.pathname === "/aplicaciones" || location.pathname === "/blog") ? null : (
+  <li className="nav-item">
+    <a className="nav-link" href="#habilidades">
+      <FaBrain style={{ marginRight: "5px" }} /> {t("nav.skills")}
+    </a>
+  </li>
+)}
+
+{location.pathname === "/aplicaciones" ? null : (
+  <li className="nav-item">
+    <NavLink className="nav-link" to={"/aplicaciones"}>
+      <FaLaptopCode style={{ marginRight: "5px" }} /> {t("nav.applications")}
+    </NavLink>
+  </li>
+)}
+
+<li className="nav-item">
+  <a className="nav-link" href="#contactame">
+    <FaEnvelope style={{ marginRight: "5px" }} /> {t("nav.contact")}
+  </a>
+</li>
+
+{location.pathname === "/blog" ? null : (
+  <li className="nav-item">
+    <a className="nav-link" href="/blog">
+      <FaBlog style={{ marginRight: "5px" }} /> {t("nav.blog")}
+    </a>
+  </li>
+)}
+```
+
+## Icons
+
+All nav icons are imported from the `react-icons/fa` package:
+
+```jsx
+import {
+  FaHome,
+  FaUser,
+  FaBrain,
+  FaLaptopCode,
+  FaEnvelope,
+  FaBlog,
+} from "react-icons/fa";
+```
+
+<Note>
+  `FaUser` is imported but not currently used in any rendered nav item. It is available for future use, for example an "About me" link.
+</Note>
+
+## Scroll Hide / Show Behaviour
+
+The navbar hides by sliding up to `top: -50px` when the user scrolls down, and slides back to `top: 0` when the user scrolls up. This is implemented inside a `useEffect` that attaches to `window`'s scroll event.
+
+```jsx
+useEffect(() => {
+  window.scrollTo(0, 0); // scroll to top on every route change
+
+  let prevScrollpos = window.pageYOffset;
+
+  const handleScroll = () => {
+    let currentScrollPos = window.pageYOffset;
+    const navbar = document.getElementById("navbar");
+    const n2 = document.getElementById("n2");
+
+    if (prevScrollpos > currentScrollPos) {
+      // scrolling UP → show navbar
+      navbar.style.top = "0";
+      n2.style.top = "0";
+    } else {
+      // scrolling DOWN → hide navbar
+      navbar.style.top = "-50px";
+      n2.style.top = "-50px";
+    }
+    prevScrollpos = currentScrollPos;
+  };
+
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll); // cleanup on unmount
+  };
+}, [location.pathname]); // re-runs on every route change
+```
+
+The `useEffect` dependency array contains `location.pathname`, so the listener is re-registered (and the page scrolls back to top) whenever the route changes. The cleanup function ensures no duplicate listeners accumulate.
+
+<Tip>
+  Both `#navbar` and `#n2` receive the `top` update. `#navbar` is the `<nav>` element itself; `#n2` is the inner `container-fluid` div that is `position: fixed` on mobile viewports (≤799 px), so both need to move in sync.
+</Tip>
+
+## CSS — `@styles/Nav.css`
+
+Key rules from `Nav.css`:
+
+| Rule | Purpose |
+|---|---|
+| `#navbar { position: fixed; top: 0; height: 50px; }` | Pins navbar to the top of the viewport |
+| `transition: background-color 0.12s ease-in-out` | Smooth dark/light colour transition on all nav elements |
+| `.nav-ul { height: 40px; display: flex; align-items: center; }` | Horizontal link strip on desktop |
+| `.dark-mode #navbar { background-color: #1D232A; }` | Dark mode background |
+| `@media (max-width: 799px)` | Collapses to Bootstrap toggler; `#n2` becomes full-width fixed |
+| `.nav-settings-item { margin-left: auto; }` | Pushes `SettingsButton` to the far right |
+
+### Responsive Breakpoints
+
+| Breakpoint | Behaviour |
+|---|---|
+| `≥ 1200 px` | Full horizontal navbar; `.nav-ul` is 90 % wide, centred |
+| `800 – 1199 px` | Full horizontal navbar; toggler hidden via CSS |
+| `≤ 799 px` | Bootstrap collapsible; toggler visible; links stack vertically |
+
+## i18n Keys
+
+Text labels are loaded via `react-i18next` using the `t()` function. The English values (from `src/locales/en.json`) are:
+
+```json
+{
+  "nav": {
+    "home": "Home",
+    "skills": "Skills",
+    "applications": "Applications",
+    "contact": "Contact me",
+    "blog": "Blog"
+  }
+}
+```
+
+To change a label, edit the corresponding key in `src/locales/en.json` (English) and `src/locales/es.json` (Spanish).
+
+## Bootstrap Classes Reference
+
+| Class | Element | Purpose |
+|---|---|---|
+| `navbar` | `<nav>` | Bootstrap base navbar styles |
+| `navbar-expand-lg` | `<nav>` | Collapse on screens below `lg` (992 px) |
+| `container-fluid` | Inner `<div>` | Full-width flex container |
+| `navbar-toggler` | `<button>` | Hamburger button for mobile |
+| `collapse navbar-collapse` | Link wrapper | Collapsible link area |
+| `navbar-nav nav-ul` | `<ul>` | Flex list of nav items |
+
+## Customisation
+
+<Steps>
+  <Step title="Add a new nav link">
+    Add a new `<li className="nav-item">` inside the `<ul className="navbar-nav nav-ul">` block in `Nav.jsx`. Import the desired `react-icons/fa` icon at the top of the file.
+  </Step>
+  <Step title="Add route-aware hiding">
+    Wrap the new `<li>` in a conditional: `{location.pathname === "/your-route" ? null : ( <li>...</li> )}` so the link disappears when the user is already on that page.
+  </Step>
+  <Step title="Add the i18n key">
+    Add the key to `src/locales/en.json` under the `"nav"` object, and add the Spanish equivalent in `src/locales/es.json`.
+  </Step>
+  <Step title="Style adjustments">
+    All nav-specific styles live in `src/styles/Nav.css`. Dark mode overrides are applied via the `.dark-mode` class that the `DarkModeProvider` adds to `<body>`.
+  </Step>
+</Steps>

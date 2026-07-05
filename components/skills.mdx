@@ -1,0 +1,254 @@
+---
+title: "Habilidades Component: Animated Tech Skills Carousel"
+sidebarTitle: "Skills"
+description: "The Habilidades component renders two infinite-scrolling carousels of technology logos — one for front-end stack, one for back-end stack."
+---
+
+The `Habilidades` component showcases Iwinser Sanchez's technology stack through two continuously scrolling logo carousels — one for front-end technologies and one for back-end technologies. Each carousel loops seamlessly by duplicating every logo, so the animation runs indefinitely without a visible reset jump. The section is anchored to `#habilidades` so the Nav bar's Skills link scrolls directly to it.
+
+## Source File
+
+**`src/components/Habilidades.jsx`**
+
+## Section Anchor
+
+The skills article uses `id="habilidades"`, which is the target of the `#habilidades` anchor link in the `Nav` component:
+
+```jsx
+<article id="habilidades" className="pt-3">
+  <h3>{t("skills.title")}</h3>
+</article>
+```
+
+## Skill Tracks
+
+### Front-end Track
+
+Seven unique logos, each duplicated once for a total of **14 slides**:
+
+| # | Technology | Asset |
+|---|---|---|
+| 1 | React | `react.svg` |
+| 2 | HTML | `html.svg` |
+| 3 | Bootstrap | `bootstrap.svg` |
+| 4 | SAP UI5 | `ui5.svg` |
+| 5 | CSS | `css.svg` |
+| 6 | XML | `xml.svg` |
+| 7 | JSON | `json.svg` |
+
+### Back-end Track
+
+Seven unique logos, each duplicated once for a total of **14 slides**:
+
+| # | Technology | Asset |
+|---|---|---|
+| 1 | JWT | `wjt.svg` |
+| 2 | Express.js | `express.svg` |
+| 3 | MySQL | `mysql.svg` |
+| 4 | MongoDB | `mongodb.svg` |
+| 5 | Node.js | `nodejs.svg` |
+| 6 | SAP | `sap.svg` |
+| 7 | PostgreSQL | `postgresql.svg` |
+
+## Animation — How the Infinite Scroll Works
+
+The seamless loop is achieved entirely in CSS using the `slider`, `slide-track`, and `slide` classes defined in `@styles/habilidades.css`.
+
+```
+┌─── .slider (overflow: hidden) ───────────────────────────────┐
+│  ┌─── .slide-track (animation: scroll 40s linear infinite) ──┤
+│  │ [slide][slide][slide]...[7 unique]...[7 duplicates]        │
+│  └────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Key CSS Rules
+
+```css
+/* Visible window — clips overflowing content */
+.slider {
+  height: 60px;
+  width: 70%;
+  margin: 40px auto;
+  overflow: hidden;
+  position: relative;
+}
+
+/* The scrolling strip — total width = 150px × 14 slides */
+.slide-track {
+  animation: scroll 40s linear infinite;
+  display: flex;
+  width: calc(150px * 14);
+}
+
+/* Individual logo slot */
+.slide {
+  height: 60px;
+  width: 200px;
+}
+
+/* The animation scrolls exactly the width of the 7 unique logos */
+@keyframes scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(calc(-150px * 7)); }
+}
+```
+
+When the `@keyframes scroll` animation reaches 100%, the track has moved left by exactly `150px × 7` (the width of the 7 unique slides). At that point the duplicated slides fill the viewport identically to the starting position, so the browser loops back to `0%` invisibly.
+
+<Note>
+  On mobile viewports (≤799 px), the `.slider` width expands to `100%` (overriding the default `70%`) so the carousel fills the screen edge-to-edge.
+</Note>
+
+## JSX Structure
+
+Both carousels share the same markup pattern. Here is the complete front-end track:
+
+```jsx
+import react    from "../assets/react.svg";
+import htmlimg  from "../assets/html.svg";
+import bootstrap from "../assets/bootstrap.svg";
+import ui5      from "../assets/ui5.svg";
+import css      from "../assets/css.svg";
+import xml      from "../assets/xml.svg";
+import json     from "../assets/json.svg";
+
+<div className="slider">
+  <div className="slide-track">
+    {/* 7 unique logos */}
+    <div className="slide"><img src={react}     height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={htmlimg}   height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={bootstrap} height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={ui5}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={css}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={xml}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={json}      height="60" width="150" alt="" /></div>
+
+    {/* Duplicates for seamless loop */}
+    <div className="slide"><img src={react}     height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={htmlimg}   height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={bootstrap} height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={ui5}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={css}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={xml}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={json}      height="60" width="150" alt="" /></div>
+  </div>
+</div>
+```
+
+And the back-end track:
+
+```jsx
+import wjt        from "../assets/wjt.svg";
+import express    from "../assets/express.svg";
+import sql        from "../assets/mysql.svg";
+import mongodb    from "../assets/mongodb.svg";
+import node       from "../assets/nodejs.svg";
+import sap        from "../assets/sap.svg";
+import postgresql from "../assets/postgresql.svg";
+
+<div className="slider">
+  <div className="slide-track">
+    {/* 7 unique logos */}
+    <div className="slide"><img src={wjt}        height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={express}    height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={sql}        height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={mongodb}    height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={node}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={sap}        height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={postgresql} height="60" width="150" alt="" /></div>
+
+    {/* Duplicates for seamless loop */}
+    <div className="slide"><img src={wjt}        height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={express}    height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={sql}        height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={mongodb}    height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={node}       height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={sap}        height="60" width="150" alt="" /></div>
+    <div className="slide"><img src={postgresql} height="60" width="150" alt="" /></div>
+  </div>
+</div>
+```
+
+## Section Descriptions — i18n
+
+Section headings and descriptions are rendered via `dangerouslySetInnerHTML` because the `frontendDescription` and `backendDescription` values contain HTML `<strong>` tags:
+
+```jsx
+<p dangerouslySetInnerHTML={{ __html: t("skills.frontendDescription") }} />
+```
+
+The English values from `src/locales/en.json`:
+
+```json
+{
+  "skills": {
+    "title": "Skills",
+    "frontend": "Front-end",
+    "frontendDescription": "Specialized in creating high-performance and scalable user interfaces. My main focus is the <strong>React and Next.js</strong> ecosystem...",
+    "backend": "Back-end",
+    "backendDescription": "Robust and scalable development with Node.js and Express.js. Design of high-performance RESTful APIs..."
+  }
+}
+```
+
+<Note>
+  `dangerouslySetInnerHTML` is safe here because the content comes from the controlled `en.json` / `es.json` locale files — never from user input or an external API.
+</Note>
+
+## CSS — `@styles/habilidades.css`
+
+| Class / Rule | Purpose |
+|---|---|
+| `.slider` | Visible window; `overflow: hidden` clips slides outside the frame |
+| `.slide-track` | Full-width flex strip; `animation: scroll 40s linear infinite` |
+| `.slide` | Individual logo slot: `60 × 200 px` |
+| `@keyframes scroll` | Translates the track left by `150px × 7` to create the loop |
+| `@media (max-width: 799px)` | Sets `.slider { width: 100% }` for mobile |
+
+## Adding a New Skill
+
+<Steps>
+  <Step title="Place the asset">
+    Add your SVG or PNG logo to `src/assets/`. Use a short, lowercase filename — for example `tailwind.svg`.
+  </Step>
+  <Step title="Import the asset">
+    At the top of `Habilidades.jsx`, add:
+    ```jsx
+    import tailwind from "../assets/tailwind.svg";
+    ```
+  </Step>
+  <Step title="Add the original slide">
+    Inside the correct `.slide-track` (front-end or back-end), append a new slide **before** the duplicate block:
+    ```jsx
+    <div className="slide">
+      <img src={tailwind} height="60" width="150" alt="" />
+    </div>
+    ```
+  </Step>
+  <Step title="Add the duplicate slide">
+    Append the exact same `<div className="slide">...</div>` a second time, after the last duplicate, so the total count remains N unique + N duplicates:
+    ```jsx
+    <div className="slide">
+      <img src={tailwind} height="60" width="150" alt="" />
+    </div>
+    ```
+  </Step>
+  <Step title="Update the slide-track width">
+    In `habilidades.css`, update the `calc()` values to reflect the new total number of slides (N unique logos):
+    ```css
+    /* If you now have 8 unique logos (16 total slides) */
+    .slide-track {
+      width: calc(150px * 16);
+    }
+
+    @keyframes scroll {
+      100% { transform: translateX(calc(-150px * 8)); }
+    }
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  All logo images use `alt=""` (empty alt text) because they are decorative — screen readers will skip them. If a logo is meaningful in context, add a descriptive `alt` string such as `alt="React"`.
+</Tip>

@@ -1,0 +1,182 @@
+---
+title: "Projects Gallery: Filter and Search Portfolio Work"
+sidebarTitle: "Projects"
+description: "The /aplicaciones route renders a filterable, searchable gallery of projects. Each card shows a preview image, tags, and links to the live demo and GitHub repo."
+---
+
+The Projects page gives visitors a filterable, searchable overview of portfolio work. Projects are loaded from a static data array, automatically categorised by scanning their subtitle string, and rendered as interactive cards. A featured row surfaces the most important projects when no filters are active, and the grid responds to both category buttons and free-text search in real time.
+
+## Route
+
+| Path | Component file |
+|------|---------------|
+| `/aplicaciones` | `src/pages/aplicaciones.jsx` |
+
+## Data Source
+
+All project data comes from the `secondImages` array exported by `src/utils/galerimages.js`. Each entry has the following shape:
+
+```js
+{
+  src: <imported image>,   // resolved image asset
+  alt: "Project title",    // used as the card title
+  subtitle: "Tech - Stack",// comma/hyphen-separated tech list, used for tags and categorisation
+  demo: "https://...",     // live demo URL
+  repo: "https://...",     // GitHub repository URL
+  featured: true | false   // optional; defaults to false
+}
+```
+
+### Current projects in `secondImages`
+
+| Title | Subtitle / Tags | Demo | Repo |
+|-------|----------------|------|------|
+| CRUD Lista tareas | NodeJs - React - MongoDB | [crudlistatareas.netlify.app](https://crudlistatareas.netlify.app/) | [nodeJs_react_crud](https://github.com/iwinser117/nodeJs_react_crud) |
+| Autenticación JWT | NodeJs - ExpressJs - oAuth | [autenticate.vercel.app](https://autenticate.vercel.app/) | [autenticate](https://github.com/iwinser117/autenticate) |
+| Generador Contraseñas | Tailwind - NextJs | [generatepassword-theta.vercel.app](https://generatepassword-theta.vercel.app/) | [generatepassword](https://github.com/iwinser117/generatepassword) |
+| TableExportJS | NodeJs | [table-export-js-4zq5.vercel.app](https://table-export-js-4zq5.vercel.app/) | [TableExportJS](https://github.com/iwinser117/TableExportJS) |
+| CRUD SAP | NodeJs - Express - Odata - SAP | [mega-crud-table-ui5.vercel.app](https://mega-crud-table-ui5.vercel.app/) | [mega-crud-table-ui5](https://github.com/iwinser117/mega-crud-table-ui5) |
+| apk pdf | Visor PDF - Android | [pdf-generator-nodejs.vercel.app](https://pdf-generator-nodejs.vercel.app/) | [pdf_reader](https://github.com/iwinser117/pdf_reader) |
+
+## Category Derivation
+
+When the `Proyectos` component mounts, it calls `deriveCategories(subtitle)` for every entry in `secondImages` to compute the `categories` array for each project. A project can belong to **multiple categories** simultaneously.
+
+```js
+const deriveCategories = (subtitle = "") => {
+  const s = subtitle.toLowerCase();
+  const categories = [];
+
+  if (s.includes("node") || s.includes("express") || s.includes("mongo"))
+    categories.push("Node");
+  if (s.includes("tailwind") || s.includes("css") || s.includes("scss"))
+    categories.push("CSS");
+  if (s.includes("react") || s.includes("next") || s.includes("ui") || s.includes("landing"))
+    categories.push("Landing Page");
+  if (s.includes("api") || s.includes("export"))
+    categories.push("API");
+
+  return categories.length > 0 ? categories : ["Other"];
+};
+```
+
+| Keyword in `subtitle` | Assigned category |
+|-----------------------|------------------|
+| `node`, `express`, `mongo` | **Node** |
+| `tailwind`, `css`, `scss` | **CSS** |
+| `react`, `next`, `ui`, `landing` | **Landing Page** |
+| `api`, `export` | **API** |
+| *(none of the above)* | **Other** |
+
+The full list of available category filter buttons is built dynamically at runtime with `useMemo` by iterating over every project's `categories` array and collecting unique values into a `Set`, then prepending `"All"`:
+
+```js
+const categories = useMemo(() => {
+  const cats = new Set();
+  projects.forEach(p => p.categories.forEach(cat => cats.add(cat)));
+  return ["All", ...Array.from(cats)];
+}, [projects]);
+```
+
+## Filtering and Search
+
+Both the category filter and the text search are applied together inside a single `useMemo` that recomputes `filteredProjects` whenever `projects`, `selectedCategory`, or `searchQuery` changes:
+
+```js
+const filteredProjects = useMemo(() => {
+  return projects.filter(project => {
+    const matchesCategory =
+      selectedCategory === "All" ||
+      project.categories.includes(selectedCategory);
+    const matchesSearch =
+      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+}, [projects, selectedCategory, searchQuery]);
+```
+
+- **Category filter** — clicking a button sets `selectedCategory`; clicking "All" resets to the full list.
+- **Text search** — the search input sets `searchQuery`. The filter checks both `project.title` and `project.subtitle` case-insensitively.
+
+## Featured Projects
+
+When `selectedCategory === 'All'` **and** `searchQuery === ''`, a **Featured Projects** row is shown above the main grid. It contains every project whose `featured` property is `true`:
+
+```js
+const featuredProjects = projects.filter(p => p.featured);
+```
+
+Featured cards display a `★ Destacado` badge in their top-right corner. The featured row is hidden as soon as any category filter or search query is active.
+
+## `ProjectCard` Component
+
+Each project is rendered by the `ProjectCard` component, which is defined inline in `aplicaciones.jsx`. Key rendering details:
+
+| Element | Behaviour |
+|---------|-----------|
+| **Image** | Scales to `1.1×` on hover via a CSS `transform` transition |
+| **Title** | Changes color to `#4DB1FF` on hover |
+| **Subtitle** | Rendered as a two-line clamped description paragraph |
+| **Tags** | Derived by splitting `subtitle` on ` - `; only the first **3** tags are shown |
+| **Demo button** | Opens `demo` URL in a new tab; disabled (opacity `0.4`, no pointer) when `demo` is an empty string |
+| **Repo button** | Opens `repo` URL in a new tab; disabled when `repo` is an empty string |
+| **Featured badge** | Shows `★ Destacado` when `featured={true}` is passed |
+
+```jsx
+<div style={cardStyles.tags}>
+  {project.tags.slice(0, 3).map((tag, idx) => (
+    <span key={idx} style={cardStyles.tag}>{tag}</span>
+  ))}
+</div>
+```
+
+## Theme
+
+The page reads the global dark/light preference via the `useDarkMode()` hook from `DarkModeProvider`:
+
+```js
+const isDark = useDarkMode();
+const colors = getThemeColors(isDark);
+```
+
+`getThemeColors(isDark)` returns a palette object with keys like `bgPrimary`, `textPrimary`, `gradientPrimary`, `shadowMedium`, etc. All inline styles reference this object, so the entire page repaints automatically when the user toggles the theme.
+
+## Adding a New Project
+
+<Steps>
+  <Step title="Open the gallery data file">
+    Open `src/utils/galerimages.js` in your editor.
+  </Step>
+  <Step title="Import the project image">
+    Add an import for your image asset at the top of the file, alongside the existing imports:
+    ```js
+    import myNewProject from "@assets/myNewProject.webp";
+    ```
+  </Step>
+  <Step title="Add an entry to secondImages">
+    Append an object to the `secondImages` array:
+    ```js
+    {
+      src: myNewProject,
+      alt: "My New Project",           // becomes the card title
+      subtitle: "React - Node - API",  // drives tag display and category derivation
+      demo: "https://my-project.vercel.app/",
+      repo: "https://github.com/iwinser117/my-new-project"
+    }
+    ```
+  </Step>
+  <Step title="Mark as featured (optional)">
+    Add `featured: true` to the entry to display it in the Featured Projects row at the top of the page when no filters are active:
+    ```js
+    {
+      src: myNewProject,
+      alt: "My New Project",
+      subtitle: "React - Node - API",
+      demo: "https://my-project.vercel.app/",
+      repo: "https://github.com/iwinser117/my-new-project",
+      featured: true
+    }
+    ```
+  </Step>
+</Steps>

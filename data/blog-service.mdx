@@ -1,0 +1,269 @@
+---
+title: "BlogService: Blog Data Access Layer"
+sidebarTitle: "Blog Service"
+description: "BlogService is a static class in src/services/blogService.js that reads posts.json and exposes async methods for fetching, filtering, searching, and commenting."
+---
+
+All blog data access in the Hector Portfolio is funnelled through a single static class: `BlogService`, defined in `src/services/blogService.js`. The class imports `src/data/posts.json` at module level and provides async methods that mirror what a real REST API would expose — complete with simulated network latency. Swapping in a live backend later requires changing only this file.
+
+## Data Source
+
+`BlogService` imports `src/data/posts.json` directly at the top of the module:
+
+```js
+import postsData from '../data/posts.json';
+```
+
+The JSON array is loaded once when the module is first imported; all methods operate on this in-memory array. No network call is made to populate `postsData` itself.
+
+## The `Post` Type
+
+Every method returns `Post` objects (or arrays of them). The shape is defined by `src/data/posts.json` and documented in `EXAMPLE_POST.json`:
+
+```ts
+interface Post {
+  _id: string;           // Unique document ID, e.g. "post-002"
+  title: string;         // Human-readable post title
+  slug: string;          // URL-safe identifier used for routing
+  author: string;        // Author display name
+  date: string;          // ISO 8601 date string, e.g. "2026-02-04"
+  category: string;      // Single category label, e.g. "SAP"
+  tags: string[];        // Array of tag strings, e.g. ["SAP", "API", "OAuth2"]
+  excerpt: string;       // Short summary shown in card/list views
+  content: string;       // Full post body as an HTML string
+  image: string | string[]; // Cover image URL or array of inline image URLs
+  views: number;         // View counter (incremented in-memory)
+  comments: Comment[];   // Array of approved/pending comment objects
+}
+
+interface Comment {
+  id: string;            // Unique comment ID, e.g. "comment-001"
+  author: string;        // Commenter display name
+  email?: string;        // Optional email (may be null)
+  content: string;       // Comment body text
+  date: string;          // ISO 8601 date string
+  approved: boolean;     // Moderation flag — new comments default to false
+}
+```
+
+## Static Methods
+
+### `BlogService.getAllPosts()`
+
+```ts
+static async getAllPosts(): Promise<Post[]>
+```
+
+Returns all posts sorted by `date` descending (newest first). Simulates a 300 ms network delay before resolving.
+
+```js
+const posts = await BlogService.getAllPosts();
+// posts[0] is the most recently dated post
+```
+
+---
+
+### `BlogService.getPostBySlug(slug)`
+
+```ts
+static async getPostBySlug(slug: string): Promise<Post>
+```
+
+Finds the first post where `post.slug === slug`. Throws `Error('Post no encontrado')` if no match exists. Use inside a `try/catch` or let the calling hook surface the error.
+
+<ParamField path="slug" type="string" required>
+  The URL-safe slug string that uniquely identifies the post, e.g. `"consumo-api-sap-build-bruno"`.
+</ParamField>
+
+```js
+try {
+  const post = await BlogService.getPostBySlug('consumo-api-sap-build-bruno');
+} catch (err) {
+  // err.message === 'Post no encontrado'
+}
+```
+
+---
+
+### `BlogService.getPostsByCategory(category)`
+
+```ts
+static async getPostsByCategory(category: string): Promise<Post[]>
+```
+
+Returns all posts whose `post.category` exactly matches the provided string. Returns an empty array if no posts belong to that category.
+
+<ParamField path="category" type="string" required>
+  Category label to filter by, e.g. `"SAP"`.
+</ParamField>
+
+```js
+const sapPosts = await BlogService.getPostsByCategory('SAP');
+```
+
+---
+
+### `BlogService.getPostsByTag(tag)`
+
+```ts
+static async getPostsByTag(tag: string): Promise<Post[]>
+```
+
+Returns all posts where `post.tags.includes(tag)`. The comparison is exact (not case-insensitive).
+
+<ParamField path="tag" type="string" required>
+  A single tag string to match against each post's `tags` array, e.g. `"OAuth2"`.
+</ParamField>
+
+```js
+const oauthPosts = await BlogService.getPostsByTag('OAuth2');
+```
+
+---
+
+### `BlogService.getCategories()`
+
+```ts
+static async getCategories(): Promise<string[]>
+```
+
+Returns a deduplicated array of all category strings present across all posts. Uses `Set` internally to guarantee uniqueness. Simulates a 200 ms delay.
+
+```js
+const categories = await BlogService.getCategories();
+// e.g. ["SAP", "JavaScript", "Node.js"]
+```
+
+---
+
+### `BlogService.getTags()`
+
+```ts
+static async getTags(): Promise<string[]>
+```
+
+Flattens all `post.tags` arrays from every post, then deduplicates them with `Set`. Returns a single unique list of all tags in the data set. Simulates a 200 ms delay.
+
+```js
+const tags = await BlogService.getTags();
+// e.g. ["SAP", "API", "Bruno", "Integration", "OAuth2"]
+```
+
+---
+
+### `BlogService.searchPosts(query)`
+
+```ts
+static async searchPosts(query: string): Promise<Post[]>
+```
+
+Case-insensitive full-text search across three fields: `title`, `excerpt`, and the `tags` array. A post is included in results if any one of those three fields contains the query string.
+
+<ParamField path="query" type="string" required>
+  The search term. Matched case-insensitively against `title`, `excerpt`, and each entry in `tags`.
+</ParamField>
+
+```js
+const results = await BlogService.searchPosts('oauth');
+// Matches posts with "OAuth" in title, excerpt, or tags
+```
+
+---
+
+### `BlogService.addComment(slug, comment)`
+
+```ts
+static async addComment(
+  slug: string,
+  comment: { author: string; email?: string; content: string }
+): Promise<Comment>
+```
+
+Validates the incoming comment data, then constructs and returns a new `Comment` object. **The comment is not persisted** — in the current implementation it is returned to the caller but not appended to `postsData`. Persistence should be handled by a backend endpoint in production.
+
+<ParamField path="slug" type="string" required>
+  Slug of the post the comment belongs to.
+</ParamField>
+<ParamField path="comment.author" type="string" required>
+  Display name of the commenter. Throws `Error('El nombre es requerido')` if absent.
+</ParamField>
+<ParamField path="comment.content" type="string" required>
+  Comment body text. Throws `Error('El comentario es requerido')` if absent, or `Error('El comentario es muy corto')` if fewer than 3 characters.
+</ParamField>
+<ParamField path="comment.email" type="string">
+  Optional commenter email. Stored as `null` if not provided.
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="id" type="string">
+  Auto-generated ID using `comment-{Date.now()}`.
+</ResponseField>
+<ResponseField name="author" type="string">
+  Commenter's display name.
+</ResponseField>
+<ResponseField name="email" type="string | null">
+  Email address, or `null` if not provided.
+</ResponseField>
+<ResponseField name="content" type="string">
+  The comment body.
+</ResponseField>
+<ResponseField name="date" type="string">
+  ISO 8601 date string for today's date (date portion only, e.g. `"2026-02-05"`).
+</ResponseField>
+<ResponseField name="approved" type="boolean">
+  Always `false` on creation — moderation is required before the comment is shown publicly.
+</ResponseField>
+
+```js
+const newComment = await BlogService.addComment('consumo-api-sap-build-bruno', {
+  author: 'Juan García',
+  email: 'juan@example.com',
+  content: 'Excelente guía, muy clara la sección de OAuth2.'
+});
+// newComment.approved === false
+```
+
+---
+
+### `BlogService.incrementViewCount(slug)`
+
+```ts
+static async incrementViewCount(slug: string): Promise<void>
+```
+
+Finds the matching post and increments its `views` counter in-memory. The change is **not persisted** to disk or any external store — it resets on every page reload. Simulates a 200 ms delay. Does not throw if the post is not found; the error is swallowed with `console.error`.
+
+```js
+await BlogService.incrementViewCount('consumo-api-sap-build-bruno');
+// post.views has been incremented in the in-memory postsData array
+```
+
+## The Simulated Delay
+
+<Note>
+  Most methods call an internal `delay(300)` helper (`delay(200)` for lighter operations) before resolving. This intentional pause mimics real API latency so that loading states in the UI are visible during development.
+
+  When you connect a real backend, replace each `await delay(ms)` with the appropriate `fetch()` (or Axios / SDK) call. No other code needs to change — the public API surface of `BlogService` stays identical.
+</Note>
+
+## Replacing with a Real API
+
+When you are ready to connect a live REST backend, update `getAllPosts()` as a model for all other methods:
+
+```js
+// Before — local JSON
+static async getAllPosts() {
+  await delay(300);
+  return postsData.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// After — real REST endpoint
+static async getAllPosts() {
+  const response = await fetch('https://api.example.com/posts?sort=-date');
+  if (!response.ok) throw new Error('Error al obtener posts');
+  return response.json(); // already sorted by the server
+}
+```
+
+Apply the same pattern to every method: remove `await delay(...)`, replace the `postsData` operation with a `fetch()` call to the corresponding endpoint, and propagate HTTP errors by checking `response.ok`. The hooks in `src/hooks/useBlog.js` require **zero changes** because they depend only on the `BlogService` interface, not its implementation.

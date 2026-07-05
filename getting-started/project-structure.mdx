@@ -1,0 +1,112 @@
+---
+title: "Hector Portfolio Project Structure and Architecture"
+sidebarTitle: "Project Structure"
+description: "Explore the directory layout, Webpack path aliases, and module conventions used throughout the Hector Portfolio codebase."
+---
+
+Hector Portfolio follows a feature-oriented `src/` layout that separates concerns into purpose-named directories — pages, containers, components, utilities, data, and styles — connected by Webpack path aliases that make imports read naturally regardless of where a file lives in the tree.
+
+## Directory Tree
+
+All application source code lives under `src/`. The rest of the repository root contains configuration files (`webpack.config.js`, `.babelrc`, `package.json`) and the `public/` directory that seeds the HTML template and Netlify routing rules.
+
+```text
+src/
+├── assets/         # Images, SVGs, PDFs
+├── buttons/        # DarkModeProvider, SettingsButton, SettingsModal, BtnArriba, VerMas
+├── codigoProyectos/ # Embeddable mini-apps (Calculadora, Contador, etc.)
+├── components/     # Reusable UI (Nav, Banner, Acerca, Habilidades, Formulario, Footer…)
+├── containers/     # Page-level sections (Section1–5, BlogList, BlogPost…)
+├── data/           # posts.json — local blog post data
+├── hooks/          # useBlog, useComments custom hooks
+├── locales/        # en.json, es.json translation files + i18nConfig.js
+├── pages/          # Route-level components: Home.jsx, aplicaciones.jsx, Blog.jsx
+├── routes/         # App.jsx — React Router route definitions
+├── services/       # blogService.js — data access layer
+├── styles/         # Per-component CSS files + root.css/root.sass
+├── temas/          # temaConfig.js — theme configuration
+└── utils/          # Helper utilities (galerimages, sendForm, track, verForm…)
+```
+
+### Notable Directories
+
+- **`buttons/`** — Houses the global `DarkModeProvider` context alongside UI controls such as `SettingsButton`, `SettingsModal`, `BtnArriba` (scroll-to-top), and `VerMas` (show-more).
+- **`containers/`** — Large page sections (`Section1` through `Section5`, `BlogList`, `BlogPost`) that compose smaller `components/` together into full page regions.
+- **`hooks/`** — Custom React hooks: `useBlog` (fetches and filters blog posts) and `useComments` (manages per-post comments state).
+- **`locales/`** — Translation JSON files (`en.json`, `es.json`) and the `i18nConfig.js` bootstrap file imported once in `src/index.js`.
+- **`services/`** — `blogService.js` acts as a data-access layer between the raw `data/posts.json` and the UI hooks, keeping data concerns out of components.
+- **`temas/`** — `temaConfig.js` centralizes MUI theme configuration, consumed by `DarkModeProvider` when constructing the active MUI theme object.
+
+## Webpack Path Aliases
+
+Both `webpack.config.js` (production) and `webpack.config.dev.js` (development) declare identical `resolve.alias` entries, so the same import paths work in both environments.
+
+| Alias | Resolves to |
+|---|---|
+| `@styles` | `src/styles/` |
+| `@buttons` | `src/buttons/` |
+| `@codigoProyectos` | `src/codigoProyectos/` |
+| `@components` | `src/components/` |
+| `@containers` | `src/containers/` |
+| `@pages` | `src/pages/` |
+| `@assets` | `src/assets/` |
+| `@utils` | `src/utils/` |
+
+<Tip>
+  Use these aliases in any source file instead of relative paths. For example, `import Nav from '@components/Nav'` works correctly whether the importing file is one or five directories deep.
+</Tip>
+
+## Routing
+
+`src/routes/App.jsx` is the application's root component. It wraps all routes inside `DarkModeProvider` (so theme context is available everywhere) and defines four routes using React Router DOM v6's `<Routes>` and `<Route>`:
+
+| Path | Component | Description |
+|---|---|---|
+| `/` | `Home` (`@pages/Home`) | Main landing page with all profile sections |
+| `/aplicaciones` | `Proyectos` (`@pages/aplicaciones`) | Project gallery with search and filters |
+| `/blog` | `Blog` (`@pages/Blog`) | Blog article listing |
+| `/blog/:slug` | `BlogPost` (`@containers/BlogPost`) | Individual article view |
+
+```jsx
+// src/routes/App.jsx (simplified)
+const App = () => (
+  <DarkModeProvider>
+    <div className="app-container main-container">
+      <Routes>
+        <Route exact path="/"            element={<Home />} />
+        <Route        path="/aplicaciones" element={<Proyectos />} />
+        <Route        path="/blog"         element={<Blog />} />
+        <Route        path="/blog/:slug"   element={<BlogPost />} />
+      </Routes>
+    </div>
+  </DarkModeProvider>
+);
+```
+
+## Module Conventions
+
+Consistent naming conventions are applied throughout the codebase to make navigation predictable:
+
+- **React components** are named in **PascalCase** and use the `.jsx` extension (e.g., `Banner.jsx`, `Formulario.jsx`).
+- **Custom hooks** are prefixed with `use` and use the `.js` extension (e.g., `useBlog.js`, `useComments.js`).
+- **CSS files** are named after the component they style (e.g., `Nav.css` styles `Nav.jsx`) and imported directly inside the component file.
+- **Utility functions** are plain JavaScript modules in `src/utils/` (e.g., `sendForm.js`, `track.js`, `verForm.js`).
+
+## Babel Configuration
+
+Transpilation is configured in `.babelrc` at the project root. Two presets are active:
+
+```json
+{
+  "presets": ["@babel/preset-env", "@babel/preset-react"]
+}
+```
+
+| Preset | Purpose |
+|---|---|
+| `@babel/preset-env` | Transpiles modern JavaScript (ES2015+) to broadly compatible output based on the target environment |
+| `@babel/preset-react` | Transforms JSX syntax into standard `React.createElement` calls |
+
+<Note>
+  `@babel/plugin-transform-runtime` is listed in `devDependencies` but is not active in `.babelrc`. If you add async/await patterns or need to reduce bundle duplication from Babel helpers, you can enable it by adding it to the `plugins` array in `.babelrc`.
+</Note>

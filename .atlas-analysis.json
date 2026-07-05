@@ -1,0 +1,71 @@
+{
+  "projectType": "frontend",
+  "projectName": "Hector Portfolio",
+  "projectDescription": "A personal developer portfolio built with React 18 that showcases professional profile, technical skills, categorized projects, and a technical blog — with dark/light theming and full bilingual (ES/EN) support.",
+  "theme": "willow",
+  "primaryColor": "#ec1404",
+  "lightColor": "#fc918c",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "getting-started/local-setup", "getting-started/project-structure"]
+          },
+          {
+            "group": "Core Features",
+            "pages": ["features/dark-light-theme", "features/internationalization", "features/contact-form"]
+          }
+        ]
+      },
+      {
+        "tab": "Pages & Components",
+        "groups": [
+          {
+            "group": "Pages",
+            "pages": ["pages/home", "pages/projects", "pages/blog"]
+          },
+          {
+            "group": "Components",
+            "pages": ["components/nav", "components/banner", "components/skills", "components/certifications"]
+          },
+          {
+            "group": "Data & Hooks",
+            "pages": ["data/project-data", "data/blog-service", "data/blog-hooks"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Home page with hero banner, about section, skills carousel, certifications timeline, and contact form",
+    "Projects gallery with real-time category filtering and text search",
+    "Blog with post listing, individual post view by slug, and comment system",
+    "Global dark/light mode toggle persisted in localStorage",
+    "Full bilingual support (Spanish/English) using i18next",
+    "Contact form integrated with EmailJS for zero-backend email delivery",
+    "Responsive design with Bootstrap and custom CSS/SASS",
+    "Webpack 5 build with path aliases, CSS extraction, and production optimizations"
+  ],
+  "publicApiSurface": [
+    "DarkModeProvider / useDarkMode() context hook",
+    "useBlog() — fetch all blog posts",
+    "useBlogPost(slug) — fetch a single post by slug",
+    "useBlogFilter(posts, { category, tags, search }) — filter posts",
+    "useBlogCategories() — unique post categories",
+    "useBlogTags() — unique post tags",
+    "BlogService.getAllPosts()",
+    "BlogService.getPostBySlug(slug)",
+    "BlogService.getPostsByCategory(category)",
+    "BlogService.getPostsByTag(tag)",
+    "BlogService.searchPosts(query)",
+    "BlogService.addComment(slug, comment)",
+    "BlogService.incrementViewCount(slug)",
+    "secondImages[] — project card data array",
+    "section1Projects[], section2Projects[], section3Projects[] — categorized project arrays",
+    "Routes: / (Home), /aplicaciones (Projects), /blog (Blog list), /blog/:slug (Blog post)"
+  ]
+}

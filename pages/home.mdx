@@ -1,0 +1,120 @@
+---
+title: "Home Page: Portfolio Hero, Skills, and Contact"
+sidebarTitle: "Home"
+description: "The Home page at / assembles the hero banner, about section, skills carousel, certifications timeline, and contact form into a single-scroll experience."
+---
+
+The Home page is the primary entry point of Hector Portfolio. It renders a continuous single-scroll layout that takes a visitor from the animated hero banner through an about section and skills showcase all the way down to the contact form — all wrapped in a single dark-mode container. Every major content block is a standalone component, making the page easy to maintain and extend without touching the root file.
+
+## Route
+
+| Path | Component file |
+|------|---------------|
+| `/` | `src/pages/Home.jsx` |
+
+## Component Composition
+
+`Home.jsx` renders the following components in order, all nested inside a single wrapper `div`:
+
+```jsx
+// src/pages/Home.jsx
+import React from "react"
+import "@styles/home.css"
+
+import Nav        from "@components/Nav"
+import Banner     from "@components/Banner"
+import Acerca     from "@components/Acerca"
+import Habilidades from "@components/Habilidades"
+import BtnArriba  from "@buttons/BtnArriba"
+import Formulario from "@components/Formulario"
+import Aside      from "@components/Aside"
+import Footer     from "@components/Footer"
+
+const Home = () => {
+  return (
+    <>
+      <div className="data-bs-theme-dark letra-home">
+        <Nav />
+        <Banner />
+        <Acerca />
+        <Habilidades />
+        <BtnArriba />
+        <Formulario />
+        <Aside />
+        <Footer />
+      </div>
+    </>
+  )
+}
+```
+
+### Component descriptions
+
+| Component | Role |
+|-----------|------|
+| `Nav` | Sticky navigation bar with anchor links to `#habilidades`, `#acercademi`, and `#contactame`. Calls `window.scrollTo(0, 0)` inside a `useEffect` on every route change to restore the scroll position to the top of the page. |
+| `Banner` | Full-viewport hero section displaying the developer name, title (`FullStack Developer - BTP CPI`), a short description, and action buttons linking to GitHub, LinkedIn, and the CV. |
+| `Acerca` | "About me" section (`#acercademi`). Renders the personal introduction, a personal projects summary, and a certifications paragraph. |
+| `Habilidades` | Skills section (`#habilidades`). Shows categorised skill cards for Front-end, Back-end, and SAP technologies. |
+| `BtnArriba` | Floating scroll-to-top button. Appears once the user scrolls past the fold and smoothly returns the page to the top when clicked. |
+| `Formulario` | Contact form (`#contactame`) with fields for name, email, subject, and message. The form fields are internationalised via the `en.json` / `es.json` locale files. |
+| `Aside` | Fixed side panel with a quick "Contact Me" shortcut link. |
+| `Footer` | Page footer with copyright information and social links. |
+
+## Anchor Links
+
+The `Nav` component provides three in-page anchor links used to jump to sections without a full route change:
+
+| Anchor | Target section |
+|--------|---------------|
+| `#habilidades` | Skills — `<Habilidades />` |
+| `#acercademi` | About — `<Acerca />` |
+| `#contactame` | Contact — `<Formulario />` |
+
+## Scroll Restoration
+
+The `Nav` component runs `window.scrollTo(0, 0)` inside a `useEffect` hook so that navigating to `/` from another route always starts at the top of the page:
+
+```js
+// inside Nav.jsx
+useEffect(() => {
+  window.scrollTo(0, 0)
+}, [])
+```
+
+## Dark Mode Wrapper
+
+The entire page content is wrapped in a `div` with the classes `data-bs-theme-dark` and `letra-home`. This enables Bootstrap's dark theme tokens across all child components and applies the global font stack defined in `home.css`.
+
+```jsx
+<div className="data-bs-theme-dark letra-home">
+  {/* all page components */}
+</div>
+```
+
+## CSS
+
+The page imports its base styles from `@styles/home.css`:
+
+```js
+import "@styles/home.css"
+```
+
+This stylesheet is resolved via the `@styles` Vite path alias, which maps to `src/styles/`. It defines the `letra-home` font class and any page-level layout overrides.
+
+## Related Components
+
+<CardGroup cols={2}>
+  <Card title="Banner" href="/components/banner">
+    Hero section with developer title, description, and CTA buttons.
+  </Card>
+  <Card title="Skills" href="/components/skills">
+    Categorised skills cards for Front-end, Back-end, and SAP.
+  </Card>
+  <Card title="Certifications" href="/components/certifications">
+    Certifications and education timeline inside the About section.
+  </Card>
+  <Card title="Nav" href="/components/nav">
+    Sticky navigation bar with anchor links and scroll restoration.
+  </Card>
+</CardGroup>

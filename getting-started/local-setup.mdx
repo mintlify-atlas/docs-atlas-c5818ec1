@@ -1,0 +1,112 @@
+---
+title: "Get Started with Hector Portfolio Locally"
+sidebarTitle: "Local Setup"
+description: "Clone the repository, install dependencies with npm, and run the Webpack dev server — your local portfolio is live in under two minutes."
+---
+
+Running Hector Portfolio on your own machine requires only Node.js, npm, and Git. The project uses Webpack DevServer for a fast local development loop with hot reloading, and a single `npm run build` command produces a fully optimized production bundle ready for deployment.
+
+## Prerequisites
+
+Before you begin, make sure the following tools are installed:
+
+- **Node.js 16 or higher** — [nodejs.org](https://nodejs.org/)
+- **npm** — ships with Node.js
+- **Git** — [git-scm.com](https://git-scm.com/)
+
+## Setup Steps
+
+<Steps>
+  <Step title="Clone the repository">
+    Download the source code and navigate into the project directory:
+
+    ```bash
+    git clone https://github.com/iwinser117/react-portafolio.git && cd react-portafolio
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all Node.js dependencies declared in `package.json`:
+
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+    </CodeGroup>
+
+    This will install both `dependencies` (React, MUI, i18next, EmailJS, etc.) and `devDependencies` (Webpack, Babel loaders, plugins, etc.).
+  </Step>
+
+  <Step title="Start the development server">
+    Launch the Webpack DevServer in development mode:
+
+    ```bash
+    npm run local
+    ```
+
+    This runs `webpack server --config webpack.config.dev.js`, which compiles the application, starts the dev server with hot reloading enabled, and opens your browser automatically.
+  </Step>
+
+  <Step title="Open the app in your browser">
+    The dev server listens on port **3007** by default. If your browser didn't open automatically, navigate to:
+
+    ```
+    http://localhost:3007
+    ```
+
+    You should see the Hector Portfolio home page running locally.
+  </Step>
+</Steps>
+
+## NPM Scripts
+
+The `package.json` defines three scripts for different stages of development and deployment:
+
+| Script | Command | Description |
+|---|---|---|
+| `npm run local` | `webpack server --config webpack.config.dev.js` | Starts Webpack DevServer with hot reloading on port 3007 |
+| `npm run start` | `webpack --config webpack.config.dev.js` | One-time build using the development Webpack config (no server) |
+| `npm run build` | `webpack --mode production --config webpack.config.js` | Production build with minification — outputs to `dist/` |
+
+## Environment Variable: EmailJS Key
+
+The contact form uses `@emailjs/browser` to send messages. It reads the service key from the `Email_key` environment variable, which is injected at build time via Webpack's `DefinePlugin`.
+
+<Note>
+  Create a `.env` file in the project root before starting the dev server or running a build:
+
+  ```bash
+  Email_key=your_emailjs_service_key_here
+  ```
+
+  You can obtain your service key from the [EmailJS dashboard](https://www.emailjs.com/). Without this variable, the contact form will not be able to send emails.
+</Note>
+
+## Production Build
+
+To generate a deployment-ready bundle, run:
+
+```bash
+npm run build
+```
+
+Webpack compiles the application in production mode using `webpack.config.js`, applying the following optimizations:
+
+- CSS extraction and minification via `MiniCssExtractPlugin` and `CssMinimizerWebpackPlugin`
+- JavaScript minification via `TerserWebpackPlugin`
+- Clean output directory via `CleanWebpackPlugin`
+- Static assets copied to `dist/assets/`
+
+The final output lands in the `dist/` directory at the project root.
+
+## SPA Routing on Netlify
+
+The `public/_redirects` file ships with the following rule:
+
+```
+/*    /index.html  200
+```
+
+<Tip>
+  This rule tells Netlify to serve `index.html` for every route request, which is required for React Router's client-side routing to work correctly after a hard refresh or a direct URL navigation to a deep link such as `/blog/my-post`.
+</Tip>

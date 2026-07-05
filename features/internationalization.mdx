@@ -1,0 +1,179 @@
+---
+title: "Bilingual Support with i18next in Hector Portfolio"
+sidebarTitle: "Internationalisation"
+description: "The portfolio ships with full Spanish and English translations managed by i18next. Switch language at runtime and add new keys in under a minute."
+---
+
+Hector Portfolio is fully bilingual. Every user-facing string is stored in translation files and resolved at runtime through `i18next` and its React binding `react-i18next`. Visitors can switch between Spanish and English at any time via the Settings panel, and their choice is remembered across sessions.
+
+## Libraries
+
+| Package | Role |
+|---|---|
+| `i18next` | Core internationalisation framework |
+| `react-i18next` | React hooks and components that wrap `i18next` |
+
+## Configuration — `src/locales/i18nConfig.js`
+
+The config file bootstraps `i18next` once on application start. It imports both JSON translation bundles, registers them as `resources`, and reads the user's saved language from `localStorage` — falling back to Spanish (`'es'`) if nothing is stored.
+
+```js
+// src/locales/i18nConfig.js
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import es from './es.json';
+import en from './en.json';
+
+const resources = {
+  es: { translation: es },
+  en: { translation: en },
+};
+
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: localStorage.getItem('language') || 'es', // persisted preference
+    fallbackLng: 'es',                              // fallback if key is missing
+    interpolation: {
+      escapeValue: false, // React already escapes output
+    },
+  });
+
+export default i18n;
+```
+
+| Option | Value | Meaning |
+|---|---|---|
+| `lng` | `localStorage.getItem('language') \|\| 'es'` | Active language at startup |
+| `fallbackLng` | `'es'` | Used when a key is missing in the active language |
+| `escapeValue` | `false` | Disables double-escaping (React handles XSS) |
+
+## Translation Files
+
+Both files live in `src/locales/` and share the same namespace structure. They use a single flat `translation` namespace (set in `i18nConfig.js`) whose top-level keys logically group strings by section.
+
+### Top-level namespaces
+
+| Key | Description |
+|---|---|
+| `nav` | Navigation link labels |
+| `banner` | Hero section — title, description, social links |
+| `about` | About section — greeting, name, descriptions |
+| `skills` | Skills section — title and technology descriptions |
+| `projects` | Projects page — titles, search, labels |
+| `contact` | Contact form — labels, placeholders, messages |
+| `settings` | Settings modal — theme and language option labels |
+| `Aside` | Sidebar — contact me link |
+
+### `projects` namespace (full structure)
+
+<CodeGroup>
+
+```json English (en.json)
+"projects": {
+  "pageTitle": "My Projects",
+  "pageDescription": "Explore my portfolio of modern and functional web applications",
+  "allProjects": "All Projects",
+  "projectsOf": "Projects of",
+  "search": "Search projects...",
+  "noResults": "No projects found",
+  "tryOther": "Try other search terms or categories",
+  "featured": "Featured Projects",
+  "project": "project",
+  "projects": "projects"
+}
+```
+
+```json Spanish (es.json)
+"projects": {
+  "pageTitle": "Mis Proyectos",
+  "pageDescription": "Explora mi portafolio de aplicaciones web modernas y funcionales",
+  "allProjects": "Todos los Proyectos",
+  "projectsOf": "Proyectos de",
+  "search": "Buscar proyectos...",
+  "noResults": "No se encontraron proyectos",
+  "tryOther": "Intenta con otros términos de búsqueda o categorías",
+  "featured": "Proyectos Destacados",
+  "project": "proyecto",
+  "projects": "proyectos"
+}
+```
+
+</CodeGroup>
+
+## Using Translations in a Component
+
+Call `useTranslation()` to obtain the `t` function, then pass the dot-separated key path as a string. The function returns the string for the currently active language.
+
+```jsx
+import { useTranslation } from 'react-i18next';
+
+const Nav = () => {
+  const { t } = useTranslation();
+  return <span>{t('nav.home')}</span>; // renders "Home" or "Inicio"
+};
+```
+
+<Tip>
+  You can also destructure `i18n` from `useTranslation()` when you need the current language code or the `changeLanguage` method: `const { t, i18n } = useTranslation();`
+</Tip>
+
+## Switching Language at Runtime
+
+`SettingsModal` calls `i18n.changeLanguage()` and immediately persists the selection to `localStorage` so that the choice survives a full page reload (the config file reads this value on init).
+
+```js
+// src/buttons/SettingsModal.jsx
+const handleLanguageChange = (lang) => {
+  i18n.changeLanguage(lang);           // updates all mounted components instantly
+  localStorage.setItem('language', lang); // persisted across page reloads
+};
+
+// Called when the user clicks the language buttons:
+handleLanguageChange('en'); // switch to English
+handleLanguageChange('es'); // switch to Spanish
+```
+
+The UI highlights the active language button by comparing `i18n.language` against the button's locale code.
+
+## Adding a New Translation Key
+
+<Steps>
+  <Step title="Add the key to en.json">
+    Open `src/locales/en.json` and add your new key under the appropriate top-level namespace (or create a new one).
+
+    ```json
+    "contact": {
+      ...
+      "yourNewKey": "Your English text here"
+    }
+    ```
+  </Step>
+  <Step title="Add the key to es.json">
+    Open `src/locales/es.json` and add the matching Spanish translation under the same namespace path.
+
+    ```json
+    "contact": {
+      ...
+      "yourNewKey": "Tu texto en español aquí"
+    }
+    ```
+  </Step>
+  <Step title="Use the key in your component">
+    Import `useTranslation` and call `t()` with the dot-path to your new key.
+
+    ```jsx
+    import { useTranslation } from 'react-i18next';
+
+    const MyComponent = () => {
+      const { t } = useTranslation();
+      return <p>{t('contact.yourNewKey')}</p>;
+    };
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  Because `fallbackLng` is set to `'es'`, a key that exists in `es.json` but is missing from `en.json` will still render the Spanish string rather than the raw key. Always add keys to **both** files to avoid unintended language bleed.
+</Note>

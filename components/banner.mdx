@@ -1,0 +1,220 @@
+---
+title: "Banner Component: Hero Section with Profile and Social Links"
+sidebarTitle: "Banner"
+description: "The Banner component displays Iwinser Sanchez's profile photo, title, description, and social links to GitHub, LinkedIn, and CV download."
+---
+
+The `Banner` component is the hero section of the Hector Portfolio home page. It introduces Iwinser Sanchez with a profile photo, job title, a short description, and three social action buttons — GitHub, LinkedIn, and a CV download. The photo loads lazily and fades in once the browser has fully decoded the image, preventing a jarring layout shift.
+
+## Source File
+
+**`src/components/Banner.jsx`**
+
+## Layout
+
+The component renders a full-width `<section>` using the `sectionbanner` class. Inside, a Bootstrap flex row (`d-flex justify-content-around align-items-center`) places the profile image on the left and the text content on the right.
+
+```
+┌─────────────────────────────────────────────────┐
+│  sectionbanner                                  │
+│  ┌──────────────┐   ┌───────────────────────┐  │
+│  │ iwinserPerfil│   │ Iwinser Sanchez        │  │
+│  │ (image)      │   │ FullStack Developer    │  │
+│  │              │   │ - BTP CPI              │  │
+│  └──────────────┘   │ <description>          │  │
+│                     │ [GitHub][LinkedIn][CV] │  │
+│                     └───────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+```jsx
+<section className="sectionbanner">
+  <div className="d-flex justify-content-around align-items-center p-2 container banner">
+    {/* Left: profile image */}
+    <div className="iwinserPerfil">
+      <div className={`image-placeholder ${imageLoaded ? "loaded" : ""}`}>
+        <img
+          src={iwinserPerfil}
+          alt="Perfil"
+          loading="lazy"
+          onLoad={() => setImageLoaded(true)}
+          style={{
+            opacity: imageLoaded ? 1 : 0,
+            transition: "opacity 0.3s ease-in-out",
+          }}
+        />
+      </div>
+    </div>
+
+    {/* Right: text and social links */}
+    <div className="p-2">
+      <h4 className="text-center nametitle">Iwinser Sanchez</h4>
+      <h2 className="text-center">{t("banner.title")}</h2>
+      <p className="text-center">{t("banner.description")}</p>
+      <div className="social-buttons social-buttons-small m-auto">
+        {/* social buttons */}
+      </div>
+    </div>
+  </div>
+</section>
+```
+
+## Profile Image — Lazy Load & Fade-in
+
+The profile photo is stored as a `.webp` asset and imported at the top of the component:
+
+```jsx
+import iwinserPerfil from "@assets/iwinserPerfil.webp";
+```
+
+A `useState` hook tracks whether the image has finished loading:
+
+```jsx
+const [imageLoaded, setImageLoaded] = useState(false);
+```
+
+The `<img>` element uses the native `loading="lazy"` attribute so the browser defers the network request until the image is near the viewport. Once the browser fires the `onLoad` event, `setImageLoaded(true)` is called, which:
+
+1. Adds the `loaded` class to the `image-placeholder` wrapper.
+2. Transitions the image `opacity` from `0` to `1` over 300 ms (`ease-in-out`).
+
+```jsx
+<img
+  src={iwinserPerfil}
+  alt="Perfil"
+  loading="lazy"
+  onLoad={() => setImageLoaded(true)}
+  style={{
+    opacity: imageLoaded ? 1 : 0,
+    transition: "opacity 0.3s ease-in-out",
+  }}
+/>
+```
+
+<Note>
+  While the image is loading, the `image-placeholder` div holds its dimensions so the surrounding layout does not shift. The `loaded` class can be used in `Banner.css` to apply additional styles (e.g. a box-shadow reveal) once the image is ready.
+</Note>
+
+## Social Buttons
+
+Three action buttons are rendered inside the `social-buttons` container. Each is an `<a>` tag styled with the `social-button` class:
+
+<CardGroup cols={3}>
+  <Card title="GitHub" icon="github">
+    Opens `https://github.com/iwinser117` in a new tab.  
+    Classes: `social-button github small`  
+    Attribute: `target="_blank" rel="noopener noreferrer"`
+  </Card>
+  <Card title="LinkedIn" icon="linkedin">
+    Opens `https://www.linkedin.com/in/iwinser-aljadys-sanchez-0a62a0234/` in a new tab.  
+    Classes: `social-button linkedin small`  
+    Attribute: `target="_blank" rel="noopener noreferrer"`
+  </Card>
+  <Card title="CV Download" icon="file-pdf">
+    Triggers a file download of `IwinserSanchez.pdf`.  
+    Path: `../assets/IwinserSanchez.pdf`  
+    Attribute: `download="CurriculumDeveloperIwinserSanchez"`
+  </Card>
+</CardGroup>
+
+```jsx
+{/* GitHub */}
+<a
+  className="social-button github small"
+  href="https://github.com/iwinser117"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <i className="fa-brands fa-github"></i>
+  <span>{t("banner.github")}</span>
+</a>
+
+{/* LinkedIn */}
+<a
+  className="social-button linkedin small"
+  href="https://www.linkedin.com/in/iwinser-aljadys-sanchez-0a62a0234/?originalSubdomain=co"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <i className="fa-brands fa-linkedin"></i>
+  <span>{t("banner.linkedin")}</span>
+</a>
+
+{/* CV Download */}
+<a
+  className="social-button cv small"
+  download="CurriculumDeveloperIwinserSanchez"
+  href="../assets/IwinserSanchez.pdf"
+>
+  <i className="fa-solid fa-file-pdf"></i>
+  <span>{t("banner.curriculum")}</span>
+</a>
+```
+
+<Tip>
+  The `rel="noopener noreferrer"` attribute on external links prevents the opened tab from accessing `window.opener`, which is an important security practice when using `target="_blank"`.
+</Tip>
+
+## i18n Keys
+
+Text content is loaded through `react-i18next`. The English values (from `src/locales/en.json`) are:
+
+```json
+{
+  "banner": {
+    "title": "FullStack Developer - BTP CPI",
+    "description": "Experience in JavaScript and front-end and back-end web development.",
+    "github": "GitHub",
+    "linkedin": "LinkedIn",
+    "curriculum": "Curriculum"
+  }
+}
+```
+
+The name `"Iwinser Sanchez"` is hardcoded directly in the JSX as an `<h4>` — it is not driven by an i18n key.
+
+## CSS — `@styles/Banner.css`
+
+Key CSS classes used in the component:
+
+| Class | Purpose |
+|---|---|
+| `sectionbanner` | Full-width wrapper for the hero section |
+| `iwinserPerfil` | Container that constrains and positions the profile image |
+| `image-placeholder` | Reserves space while the image loads; receives `loaded` class on completion |
+| `nametitle` | Styles the `<h4>` name heading |
+| `social-buttons` | Flex container aligning the three action buttons in a row |
+| `social-button` | Base styles for each link button (border, padding, hover effect) |
+| `github` / `linkedin` / `cv` | Colour and brand-specific overrides for each button variant |
+
+## Customisation
+
+<Steps>
+  <Step title="Replace the profile photo">
+    Swap `src/assets/iwinserPerfil.webp` with your own `.webp` (or any browser-supported image format). Update the import path in `Banner.jsx` if you change the file name:
+    ```jsx
+    import iwinserPerfil from "@assets/yourPhoto.webp";
+    ```
+  </Step>
+  <Step title="Update social links">
+    Edit the `href` values directly in `Banner.jsx`. The GitHub, LinkedIn, and CV links are hardcoded strings — no environment variable or config file is involved.
+  </Step>
+  <Step title="Replace the CV file">
+    Drop your updated PDF into `src/assets/` and adjust the `href` on the CV button:
+    ```jsx
+    href="../assets/YourName.pdf"
+    download="YourCVFileName"
+    ```
+  </Step>
+  <Step title="Update text content">
+    Edit `src/locales/en.json` for English and `src/locales/es.json` for Spanish. The keys `banner.title`, `banner.description`, `banner.github`, `banner.linkedin`, and `banner.curriculum` control all translatable strings in this component.
+  </Step>
+</Steps>
+
+## Dependencies
+
+| Package | Usage |
+|---|---|
+| `mdb-react-ui-kit` | `MDBIcon` is imported but icons are rendered via Font Awesome `<i>` tags directly |
+| `react-i18next` | `useTranslation()` hook for `t()` |
+| `@buttons/DarkModeProvider` | `useDarkMode()` — imported but not currently used to alter Banner output |
