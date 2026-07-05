@@ -1,10 +1,10 @@
 ---
-title: "Blog React Hooks Reference"
+title: "useBlog Hooks Reference: Hector Portfolio Blog Layer"
 sidebarTitle: "Blog Hooks"
-description: "Four custom React hooks in src/hooks/useBlog.js wrap BlogService calls and expose loading/error state for use in any component."
+description: "Five custom React hooks in useBlog.js and useComments.js wrap BlogService calls and expose loading, error, and post state to components."
 ---
 
-The Hector Portfolio blog logic is split cleanly between a data layer (`BlogService`) and a React layer. The React layer lives in two files: `src/hooks/useBlog.js`, which exports five hooks for fetching and filtering posts, and `src/hooks/useComments.js`, which exports one hook for managing comment submission. Together they provide every piece of state a blog component needs — loading indicators, error messages, and the data itself — without any component knowing how `BlogService` works internally.
+The Hector Portfolio blog logic is split cleanly between a data layer (`BlogService`) and a React layer. The React layer lives in two files: `src/hooks/useBlog.js`, which exports five hooks (`useBlog`, `useBlogPost`, `useBlogFilter`, `useBlogCategories`, and `useBlogTags`) for fetching and filtering posts, and `src/hooks/useComments.js`, which exports one hook for managing comment submission. Together they provide every piece of state a blog component needs — loading indicators, error messages, and the data itself — without any component knowing how `BlogService` works internally.
 
 ## Hooks in `src/hooks/useBlog.js`
 

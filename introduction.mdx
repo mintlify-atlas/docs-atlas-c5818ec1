@@ -1,7 +1,7 @@
 ---
-title: "Hector Portfolio: React 18 Developer Portfolio"
+title: "Hector Portfolio: React 18 Personal Developer Portfolio"
 sidebarTitle: "Introduction"
-description: "Hector Portfolio is a React 18 single-page app showcasing professional profile, project gallery, technical blog, and contact form with dark/light theming and EN/ES i18n."
+description: "React 18 SPA by Iwinser Sanchez with a project gallery, technical blog, EmailJS contact form, dark/light theming, and EN/ES internationalization."
 ---
 
 Hector Portfolio is a personal brand site built by Iwinser Sanchez to centralize his professional identity in a single, fast web experience. It is a React 18 single-page application bundled with Webpack 5 that brings together a professional profile, a filterable project gallery, a technical blog, and a direct-contact form — all wrapped in a bilingual (English / Spanish) interface with switchable dark and light themes. The live deployment is available at [iwinsersanchez.netlify.app](https://iwinsersanchez.netlify.app/).
@@ -20,7 +20,7 @@ The application presents four core areas of content through client-side routing 
 - **Dark / Light Mode** — A `DarkModeProvider` context wraps the entire application and exposes the current theme to every component tree without prop drilling.
 - **Bilingual Support (EN / ES)** — `i18next` and `react-i18next` handle all UI strings through `en.json` and `es.json` locale files. Language switching is available at runtime without a page reload.
 - **Contact Form via EmailJS** — The contact form uses `@emailjs/browser` to send messages directly from the browser using a service key stored in the `Email_key` environment variable.
-- **Responsive Design** — Layout adapts across screen sizes using Bootstrap (via `react-bootstrap`) and custom SASS stylesheets.
+- **Responsive Design** — Layout adapts across screen sizes using `react-bootstrap` and `mdb-react-ui-kit` alongside custom CSS stylesheets.
 - **Webpack Path Aliases** — Absolute-style imports such as `@components`, `@pages`, and `@styles` keep import paths clean throughout the codebase.
 
 ## Tech Stack
@@ -33,10 +33,10 @@ The application presents four core areas of content through client-side routing 
 | Webpack 5 | Bundling, aliases, dev server |
 | MUI v6 (`@mui/material`) | Material Design component library |
 | `@emailjs/browser` | Browser-side email delivery |
-| Bootstrap / react-bootstrap | Responsive layout utilities |
-| SASS / CSS | Per-component and global styles |
+| `react-bootstrap` + `mdb-react-ui-kit` | Responsive layout utilities |
+| `date-fns` | Date formatting and manipulation |
 | SweetAlert2 | Alert and notification dialogs |
-| lucide-react / react-icons | Icon sets |
+| `lucide-react` + `react-icons` | Icon sets |
 
 ## Explore the Documentation
 

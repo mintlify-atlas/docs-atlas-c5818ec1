@@ -1,7 +1,7 @@
 ---
-title: "EmailJS Contact Form Integration"
+title: "Browser-Side Contact Form with EmailJS in Hector Portfolio"
 sidebarTitle: "Contact Form"
-description: "The contact form uses EmailJS to send messages directly from the browser — no back-end server required. Configure your service ID, template ID, and public key."
+description: "Hector Portfolio sends contact messages from the browser via EmailJS — no server needed. Supply your service ID in an env var to start receiving emails."
 ---
 
 The contact section of Hector Portfolio lets visitors send messages directly from the browser using [EmailJS](https://www.emailjs.com). EmailJS acts as a bridge between the client-side form and a real email service (Gmail, Outlook, etc.), meaning there is no Node.js endpoint, no server deployment, and no CORS configuration needed to receive contact messages.
@@ -72,7 +72,7 @@ The `<form>` element uses a React `ref` (`form.current`) so that EmailJS can rea
     Email_key=your_service_id
     ```
 
-    Vite exposes this to the client bundle as `process.env.Email_key`, which `Formulario.jsx` reads on mount.
+    The project uses **Webpack** with `webpack.DefinePlugin`, which statically replaces `process.env.Email_key` in the bundle at build time using `dotenv`. `Formulario.jsx` reads this value on mount.
   </Step>
   <Step title="Verify the public key and template ID">
     The public key (`tvVn2ElRQmSkAAMc2`) and the template ID (`template_40uel95`) are already hard-coded in `src/components/Formulario.jsx`. If you are using your own EmailJS account you must replace both values with your own account's public key (found under **Account → API Keys**) and your template ID.

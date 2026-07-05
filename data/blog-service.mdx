@@ -1,7 +1,7 @@
 ---
-title: "BlogService: Blog Data Access Layer"
+title: "BlogService API Reference: Hector Portfolio Data Layer"
 sidebarTitle: "Blog Service"
-description: "BlogService is a static class in src/services/blogService.js that reads posts.json and exposes async methods for fetching, filtering, searching, and commenting."
+description: "Static class in blogService.js that reads posts.json and provides nine async methods for fetching, filtering, searching, and moderating blog posts."
 ---
 
 All blog data access in the Hector Portfolio is funnelled through a single static class: `BlogService`, defined in `src/services/blogService.js`. The class imports `src/data/posts.json` at module level and provides async methods that mirror what a real REST API would expose — complete with simulated network latency. Swapping in a live backend later requires changing only this file.
@@ -15,6 +15,8 @@ import postsData from '../data/posts.json';
 ```
 
 The JSON array is loaded once when the module is first imported; all methods operate on this in-memory array. No network call is made to populate `postsData` itself.
+
+`src/data/posts.json` currently contains one live post: **"Consumo de API Flow de SAP Build desde Bruno"** (slug: `consumo-api-sap-build-bruno`, category: `SAP`). Add new post objects to this array to make them available through every `BlogService` method immediately.
 
 ## The `Post` Type
 
@@ -242,7 +244,7 @@ await BlogService.incrementViewCount('consumo-api-sap-build-bruno');
 ## The Simulated Delay
 
 <Note>
-  Most methods call an internal `delay(300)` helper (`delay(200)` for lighter operations) before resolving. This intentional pause mimics real API latency so that loading states in the UI are visible during development.
+  Each method uses an internal `delay(ms)` helper before resolving. The exact delays are: `getAllPosts`, `getPostBySlug`, `getPostsByCategory`, `getPostsByTag`, and `searchPosts` each use **300 ms**; `getCategories`, `getTags`, and `incrementViewCount` use **200 ms**; `addComment` uses **500 ms** to simulate a heavier write operation. This intentional pause mimics real API latency so that loading states in the UI are visible during development.
 
   When you connect a real backend, replace each `await delay(ms)` with the appropriate `fetch()` (or Axios / SDK) call. No other code needs to change — the public API surface of `BlogService` stays identical.
 </Note>

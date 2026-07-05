@@ -44,8 +44,8 @@ The `Nav` component is the primary navigation bar for the Hector Portfolio. It s
 The logo asset is swapped at runtime using the `useDarkMode()` hook from `DarkModeProvider`:
 
 ```jsx
-import logowhite from "@assets/ok.svg";          // shown in light mode
-import logoblack from "@assets/ok_white_bgsvg.svg"; // shown in dark mode
+import logowhite from "@assets/ok.svg";             // shown in light mode (isDarkMode === false)
+import logoblack from "@assets/ok_white_bgsvg.svg"; // shown in dark mode  (isDarkMode === true)
 import { useDarkMode } from "../buttons/DarkModeProvider";
 
 const isDarkMode = useDarkMode();
@@ -54,7 +54,7 @@ const isDarkMode = useDarkMode();
 ```
 
 <Note>
-  `ok.svg` uses a white foreground (suitable for dark backgrounds). `ok_white_bgsvg.svg` uses a dark foreground (suitable for light backgrounds). The names can seem counter-intuitive — always rely on the `isDarkMode` boolean rather than the file name.
+  Despite their variable names, `logowhite` (`ok.svg`) is rendered in **light mode** and `logoblack` (`ok_white_bgsvg.svg`) is rendered in **dark mode**. The variable names reflect the logo's own background colour, not the site theme. Always rely on the `isDarkMode` boolean to determine which asset is active.
 </Note>
 
 ## Nav Links

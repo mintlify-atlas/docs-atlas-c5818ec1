@@ -1,10 +1,10 @@
 ---
 title: "Projects Gallery: Filter and Search Portfolio Work"
 sidebarTitle: "Projects"
-description: "The /aplicaciones route renders a filterable, searchable gallery of projects. Each card shows a preview image, tags, and links to the live demo and GitHub repo."
+description: "The /aplicaciones route shows a filterable, searchable grid of portfolio projects from secondImages, with auto category derivation and live demo links."
 ---
 
-The Projects page gives visitors a filterable, searchable overview of portfolio work. Projects are loaded from a static data array, automatically categorised by scanning their subtitle string, and rendered as interactive cards. A featured row surfaces the most important projects when no filters are active, and the grid responds to both category buttons and free-text search in real time.
+The Projects page gives visitors a filterable, searchable overview of portfolio work. Projects are loaded from the `secondImages` static array in `galerimages.js`, automatically categorised by scanning each entry's `subtitle` string, and rendered as interactive cards. A featured row surfaces highlighted projects when no filters are active, and the grid reacts to both category buttons and free-text search in real time.
 
 ## Route
 
@@ -14,15 +14,17 @@ The Projects page gives visitors a filterable, searchable overview of portfolio 
 
 ## Data Source
 
-All project data comes from the `secondImages` array exported by `src/utils/galerimages.js`. Each entry has the following shape:
+All project data comes from the `secondImages` array exported by `src/utils/galerimages.js`. The file also exports `imagesTodowebp`, which the component imports and maps into a `fromTodo` array internally — however, the final `projects` state is built with `return [...fromSecond]`, so `fromTodo` is intentionally **not included** in the rendered project list. Only `secondImages` entries appear on the page.
+
+Each entry in `secondImages` has the following shape:
 
 ```js
 {
   src: <imported image>,   // resolved image asset
   alt: "Project title",    // used as the card title
-  subtitle: "Tech - Stack",// comma/hyphen-separated tech list, used for tags and categorisation
-  demo: "https://...",     // live demo URL
-  repo: "https://...",     // GitHub repository URL
+  subtitle: "Tech - Stack",// hyphen-separated tech list; drives tags and category derivation
+  demo: "https://...",     // live demo URL (empty string if unavailable)
+  repo: "https://...",     // GitHub repository URL (empty string if unavailable)
   featured: true | false   // optional; defaults to false
 }
 ```
@@ -96,8 +98,8 @@ const filteredProjects = useMemo(() => {
 }, [projects, selectedCategory, searchQuery]);
 ```
 
-- **Category filter** — clicking a button sets `selectedCategory`; clicking "All" resets to the full list.
-- **Text search** — the search input sets `searchQuery`. The filter checks both `project.title` and `project.subtitle` case-insensitively.
+- **Category filter** — clicking a button sets `selectedCategory` via `useState`; clicking "All" resets to the full list.
+- **Text search** — the search input sets `searchQuery` via `useState`. The filter checks both `project.title` and `project.subtitle` case-insensitively.
 
 ## Featured Projects
 
@@ -111,7 +113,16 @@ Featured cards display a `★ Destacado` badge in their top-right corner. The fe
 
 ## `ProjectCard` Component
 
-Each project is rendered by the `ProjectCard` component, which is defined inline in `aplicaciones.jsx`. Key rendering details:
+Each project is rendered by the `ProjectCard` component, defined inline in `aplicaciones.jsx`. It accepts `{ project, featured, isDark, colors }` props:
+
+| Prop | Type | Default | Notes |
+|------|------|---------|-------|
+| `project` | `object` | — | The project data object derived from `secondImages` |
+| `featured` | `boolean` | `false` | When `true`, renders the `★ Destacado` badge |
+| `isDark` | `boolean` | — | Current dark/light mode from `useDarkMode()` |
+| `colors` | `object` | — | Theme palette from `getThemeColors(isDark)` |
+
+Key rendering details:
 
 | Element | Behaviour |
 |---------|-----------|

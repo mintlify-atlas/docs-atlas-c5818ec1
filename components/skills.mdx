@@ -72,19 +72,19 @@ The seamless loop is achieved entirely in CSS using the `slider`, `slide-track`,
   margin: 40px auto;
   overflow: hidden;
   position: relative;
-}
 
-/* The scrolling strip — total width = 150px × 14 slides */
-.slide-track {
-  animation: scroll 40s linear infinite;
-  display: flex;
-  width: calc(150px * 14);
-}
+  /* The scrolling strip — total width = 150px × 14 slides */
+  .slide-track {
+    animation: scroll 40s linear infinite;
+    display: flex;
+    width: calc(150px * 14);
+  }
 
-/* Individual logo slot */
-.slide {
-  height: 60px;
-  width: 200px;
+  /* Individual logo slot */
+  .slide {
+    height: 60px;
+    width: 200px;
+  }
 }
 
 /* The animation scrolls exactly the width of the 7 unique logos */
@@ -101,6 +101,10 @@ When the `@keyframes scroll` animation reaches 100%, the track has moved left by
 </Note>
 
 ## JSX Structure
+
+<Note>
+  `Habilidades.jsx` contains `import Carousel from "react-bootstrap/Carousel"` at the top of the file, but `Carousel` is not used anywhere in the component's JSX. The infinite-scroll effect is implemented with a plain CSS animation on `.slide-track`, not a Bootstrap carousel. The unused import can safely be removed without affecting behaviour.
+</Note>
 
 Both carousels share the same markup pattern. Here is the complete front-end track:
 

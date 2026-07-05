@@ -1,7 +1,7 @@
 ---
 title: "Blog: Technical Articles with Category Filtering"
 sidebarTitle: "Blog"
-description: "The /blog route lists technical articles loaded from a local JSON data source. Posts are filterable by category and navigable to a full-page view at /blog/:slug."
+description: "The /blog route lists SAP and web-dev articles from a local JSON file, with category tabs, tag chips, free-text search, and full post view at /blog/:slug."
 ---
 
 The Blog section of Hector Portfolio publishes technical articles focused on SAP, web development, and related technology. The list view at `/blog` supports category tabs, tag chips, and free-text search. Clicking any post card navigates to the full article at `/blog/:slug`, which renders the post's HTML content, displays metadata, and exposes an inline image injection system using `{{img-X}}` markers.
@@ -96,7 +96,7 @@ imageArray.forEach((imgUrl, index) => {
 
 - **Category tabs** — built from `useBlogCategories()`. Clicking a tab sets `selectedCategory`; clicking "Todos" clears it. Each tab shows the post count for that category.
 - **Tag chips** — built from `useBlogTags()`. Up to 8 tags are shown by default; a **+N más** button reveals the rest. Selected tags are highlighted and show a `✕` to deactivate.
-- **Free-text search** — filters posts by title, excerpt, and content via `useBlogFilter()`. A clear button (`✕`) appears inside the input when a query is present.
+- **Free-text search** — filters posts by `title` and `excerpt` via `useBlogFilter()`. A clear button (`✕`) appears inside the input when a query is present.
 - **Active filters bar** — when any filter is active, a summary row shows the active category, tags, and search query with individual remove buttons and a "Limpiar todo" button.
 - **Pagination** — 9 posts per page (`POSTS_PER_PAGE = 9`). Previous / Next buttons scroll back to the top on page change.
 - **Contact CTA** — a call-to-action section and `<Formulario />` are appended after the grid.
@@ -162,27 +162,27 @@ imageArray.forEach((imgUrl, index) => {
 
 ## Comment Data Shape
 
-Comments are stored as an array nested inside each post object:
+Comments are stored as an array nested inside each post object. The shape below reflects what `BlogService.addComment()` produces:
 
 ```json
 {
-  "id": "comment-example-001",
+  "id": "comment-1738800000000",
   "author": "Juan García",
-  "email": "juan@example.com",
+  "email": null,
   "content": "Great article!",
   "date": "2026-02-06",
-  "approved": true
+  "approved": false
 }
 ```
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `id` | `string` | Unique comment identifier |
+| `id` | `string` | Auto-generated as `comment-<Date.now()>` |
 | `author` | `string` | Required — display name of the commenter |
-| `email` | `string` | Optional — not displayed publicly |
+| `email` | `string \| null` | Optional — set to `null` if not provided; not displayed publicly |
 | `content` | `string` | Required — must be at least 3 characters |
-| `date` | `string` | ISO date string set at submission time |
-| `approved` | `boolean` | Always `false` for new comments from `addComment()` |
+| `date` | `string` | ISO date string (`YYYY-MM-DD`) set at submission time |
+| `approved` | `boolean` | Always `false` for new comments — moderation required |
 
 ## `BlogService.addComment()`
 
@@ -194,7 +194,7 @@ Comments are stored as an array nested inside each post object:
 
 ```js
 // Example usage
-const newComment = BlogService.addComment(slug, {
+const newComment = await BlogService.addComment(slug, {
   author: "Jane Doe",
   email: "jane@example.com",
   content: "Very helpful, thanks!"
